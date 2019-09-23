@@ -4,14 +4,13 @@ function init()
     //canvas.width = document.body.clientWidth; //document.width is obsolete
     //canvas.height = document.body.clientHeight; //document.height is obsolete
 	
-	document.getElementById("width").addEventListener('change', (event) => {
-		canvas.width = event.target.value;
-	});
-	document.getElementById("height").addEventListener('change', (event) => {
-		canvas.height = event.target.value;
-	});
+	loadParametersFromLocalStorage();
+	
 	canvas.width = document.getElementById("width").value;
 	canvas.height = document.getElementById("height").value;
+	
+	addListeners();
+	
 	document.getElementById("seed").value = Math.round(Math.random()*655536);
  	document.scale = 1;
 	
@@ -29,6 +28,93 @@ function init()
 			run();
 		}
     }
+	
+	saveParametersToLocalStorage();
+}
+
+function addListener(name) {
+	document.getElementById(name).addEventListener('change', (event) => {
+		save(name);
+	});
+}
+
+function addListeners() {
+	document.getElementById("width").addEventListener('change', (event) => {
+		canvas.width = event.target.value;
+		save("width");
+	});
+	document.getElementById("height").addEventListener('change', (event) => {
+		canvas.height = event.target.value;
+		save("height");
+	});
+	addListener("gridType");
+	addListener("seed");
+	addListener("treeDensity");
+	addListener("stoneDensity");
+	addListener("centerRandomness");
+	addListener("leavedTreeProportion");
+	addListener("treeSize");
+	addListener("treeSeparation");
+	addListener("serrationAmplitude");
+	addListener("serrationFrequency");
+	addListener("serrationRandomness");
+	addListener("colorRandomness");
+	addListener("clearings");
+	addListener("clearingSize");
+	addListener("treeSteps");
+}
+
+function save(name) {
+	window.localStorage.setItem(name, document.getElementById(name).value);
+}
+function load(name) {
+	document.getElementById(name).value = window.localStorage.getItem(name);
+}
+
+function saveParametersToLocalStorage() {
+	save("gridType");
+	save("width");
+	save("height");
+	save("seed");
+	save("treeDensity");
+	save("stoneDensity");
+	save("centerRandomness");
+	save("leavedTreeProportion");
+	save("treeSize");
+	save("treeSeparation");
+	save("serrationAmplitude");
+	save("serrationFrequency");
+	save("serrationRandomness");
+	save("colorRandomness");
+	save("clearings");
+	save("clearingSize");
+	save("treeSteps");
+	var defaultsWereSaved = window.localStorage.getItem("initialized");
+	if (!defaultsWereSaved)
+		window.localStorage.setItem("initialized", true);
+}
+
+function loadParametersFromLocalStorage() {
+	var defaultsWereSaved = window.localStorage.getItem("initialized");
+	if (!defaultsWereSaved)
+		return;
+	load("gridType");
+	load("width");
+	load("height");
+	load("seed");
+	load("treeDensity");
+	load("stoneDensity");
+	load("centerRandomness");
+	load("leavedTreeProportion");
+	load("treeSize");
+	load("treeSeparation");
+	load("serrationAmplitude");
+	load("serrationFrequency");
+	load("serrationRandomness");
+	load("colorRandomness");
+	load("clearings");
+	load("clearingSize");
+	load("treeSteps");
 }
 
 function getPerlin(x,y) {
