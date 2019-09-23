@@ -1,0 +1,21 @@
+canvas {
+	padding: 0px;
+	border: 0px;
+	margin: 0px;
+	background-color: white;
+}
+body {
+	padding: 0px;
+	border: 0px;
+	margin: 0px;
+	background-color: beige;
+}
+label {
+	font-size: 1em;
+	height: 1em;
+}
+input {
+	width: 6em;
+	font-size: 1em;
+	height: 1em;
+}
