@@ -2,11 +2,12 @@ function init()
 {
 	document.image = new Image();
 	document.image.src = "";
+	document.image.crossOrigin = "Anonymous";
 	
     var canvas = document.getElementById("canvas");
     //canvas.width = document.body.clientWidth; //document.width is obsolete
     //canvas.height = document.body.clientHeight; //document.height is obsolete
-	
+
 	loadParametersFromLocalStorage();
 	
 	canvas.width = document.getElementById("width").value;
@@ -110,6 +111,7 @@ function backgroundChanged(backgroundNo) {
 	console.warn("loading", backgroundNo);
 	save("backgroundNo");
 	document.image.src = "gfx/pattern_"+backgroundNo+".png";
+	document.image.crossOrigin = "Anonymous";
 }
 function addListeners() {
 	document.getElementById("resetParameters").addEventListener('click', (event) => {
@@ -121,6 +123,13 @@ function addListeners() {
 	document.getElementById("generate").addEventListener('click', (event) => {
 		location.reload();
 	});
+	document.getElementById("download").addEventListener('click', (event) => {
+		var canvas = document.getElementById("canvas");
+		var dataURL = canvas.toDataURL('image/png');
+		document.getElementById("download").href = dataURL;
+		document.getElementById("download").click();
+	});
+	
 	// document.getElementById("clearStorage").addEventListener('click', (event) => {
 		// clearStorage();
 	// });
