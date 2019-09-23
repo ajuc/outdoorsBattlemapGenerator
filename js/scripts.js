@@ -1,5 +1,8 @@
 function init()
 {
+	document.image = new Image();
+	document.image.src = "";
+	
     var canvas = document.getElementById("canvas");
     //canvas.width = document.body.clientWidth; //document.width is obsolete
     //canvas.height = document.body.clientHeight; //document.height is obsolete
@@ -7,10 +10,7 @@ function init()
 	loadParametersFromLocalStorage();
 	
 	canvas.width = document.getElementById("width").value;
-	canvas.height = document.getElementById("height").value;
-	
-	document.image = new Image();
-	document.image.src = "gfx/pattern.png";
+	canvas.height = document.getElementById("height").value;	
 	
 	addListeners();
 	
@@ -42,49 +42,6 @@ function addListener(name) {
 	});
 }
 
-function addListeners() {
-	document.getElementById("resetParameters").addEventListener('click', (event) => {
-		console.log("RESET");
-		resetParameters();
-	});
-	document.getElementById("randomizeParameters").addEventListener('click', (event) => {
-		console.log("RANDOMIZE");
-		randomizeParameters();
-	});
-	document.getElementById("generate").addEventListener('click', (event) => {
-		console.log("GENERATE");
-		location.reload();
-	});
-	document.image.addEventListener('load', (event) => {
-		document.redrawNeeded = true;
-	});
-	document.getElementById("width").addEventListener('change', (event) => {
-		canvas.width = event.target.value;
-		save("width");
-		document.redrawNeeded = true;
-	});
-	document.getElementById("height").addEventListener('change', (event) => {
-		canvas.height = event.target.value;
-		save("height");
-		document.redrawNeeded = true;
-	});
-	addListener("gridType");
-	addListener("seed");
-	addListener("treeDensity");
-	addListener("stoneDensity");
-	addListener("centerRandomness");
-	addListener("leavedTreeProportion");
-	addListener("treeSize");
-	addListener("treeSeparation");
-	addListener("serrationAmplitude");
-	addListener("serrationFrequency");
-	addListener("serrationRandomness");
-	addListener("colorRandomness");
-	addListener("clearings");
-	addListener("clearingSize");
-	addListener("treeSteps");
-}
-
 function save(name) {
 	window.localStorage.setItem(name, document.getElementById(name).value);
 }
@@ -110,6 +67,7 @@ function saveParametersToLocalStorage() {
 	save("clearings");
 	save("clearingSize");
 	save("treeSteps");
+	save("backgroundNo");
 	var defaultsWereSaved = window.localStorage.getItem("initialized");
 	if (!defaultsWereSaved)
 		window.localStorage.setItem("initialized", true);
@@ -138,6 +96,65 @@ function loadParametersFromLocalStorage() {
 	load("clearings");
 	load("clearingSize");
 	load("treeSteps");
+	load("backgroundNo");
+	backgroundChanged(document.getElementById("backgroundNo").value);
+}
+
+function backgroundChanged(backgroundNo) {
+	console.warn("loading", backgroundNo);
+	save("backgroundNo");
+	document.image.src = "gfx/pattern_"+backgroundNo+".png";
+}
+function addListeners() {
+	document.getElementById("resetParameters").addEventListener('click', (event) => {
+		resetParameters();
+	});
+	document.getElementById("randomizeParameters").addEventListener('click', (event) => {
+		randomizeParameters();
+	});
+	document.getElementById("generate").addEventListener('click', (event) => {
+		location.reload();
+	});
+	// document.getElementById("clearStorage").addEventListener('click', (event) => {
+		// clearStorage();
+	// });
+	document.image.addEventListener('load', (event) => {
+		console.warn("loaded");
+		document.redrawNeeded = true;
+	});
+	document.getElementById("width").addEventListener('change', (event) => {
+		canvas.width = event.target.value;
+		save("width");
+		document.redrawNeeded = true;
+	});
+	document.getElementById("height").addEventListener('change', (event) => {
+		canvas.height = event.target.value;
+		save("height");
+		document.redrawNeeded = true;
+	});
+	addListener("gridType");
+	addListener("seed");
+	addListener("treeDensity");
+	addListener("stoneDensity");
+	addListener("centerRandomness");
+	addListener("leavedTreeProportion");
+	addListener("treeSize");
+	addListener("treeSeparation");
+	addListener("serrationAmplitude");
+	addListener("serrationFrequency");
+	addListener("serrationRandomness");
+	addListener("colorRandomness");
+	addListener("clearings");
+	addListener("clearingSize");
+	addListener("treeSteps");
+	document.getElementById("backgroundNo").addEventListener('change', (event) => {
+		var backgroundNo = event.target.value;
+		backgroundChanged(backgroundNo);
+	});
+}
+
+function clearStorage() {
+	window.localStorage.clear();
 }
 
 function resetParameters() {
@@ -158,6 +175,8 @@ function resetParameters() {
 	document.getElementById("clearings").value = 5;
 	document.getElementById("clearingSize").value = 40;
 	document.getElementById("treeSteps").value = 3;
+	document.getElementById("backgroundNo").value = 1;
+	backgroundChanged(document.getElementById("backgroundNo").value);
 	saveParametersToLocalStorage();
 	document.redrawNeeded = true;
 }
@@ -166,6 +185,7 @@ function randomizeParameters() {
 	// document.getElementById("gridType").value = -1;
 	// document.getElementById("width").value = 1920;
 	// document.getElementById("height").value = 1080;
+	// document.getElementById("backgroundNo").value = 1;
 	document.getElementById("seed").value = Math.round(Math.random() * 65536);
 	document.getElementById("treeDensity").value = Math.round(Math.random() * 100);
 	document.getElementById("stoneDensity").value = Math.round(Math.random() * 20 * Math.random() * 5);
@@ -460,6 +480,8 @@ function drawStone(canvas, context, x, y, r, rng, colorRandomness) {
 }
 
 function drawBackground(canvas, context, rng) {
+	if (!document.image)
+		return;
     context.fillStyle = context.createPattern(document.image, "repeat");
     context.fillRect(0, 0, canvas.width, canvas.height);
 }

@@ -26,39 +26,39 @@
 			</span>
 			<span>
 				<label>tree</label>
-				<input type="range" min="0" max="400" class="slider" id="treeDensity">
+				<input type="range" min="0" max="400" class="slider" id="treeDensity"></input>
 			</span>
 			<span>
 				<label>t.sep.</label>
-				<input type="range" min="0" max="200" class="slider" id="treeSeparation">
+				<input type="range" min="0" max="200" class="slider" id="treeSeparation"></input>
 			</span>
 			<span>
 				<label>t.type</label>
-				<input type="range" min="0" max="100" class="slider" id="leavedTreeProportion">
+				<input type="range" min="0" max="100" class="slider" id="leavedTreeProportion"></input>
 			</span>
 			<span>
 				<label>stone</label>
-				<input type="range" min="0" max="400" class="slider" id="stoneDensity">
+				<input type="range" min="0" max="400" class="slider" id="stoneDensity"></input>
 			</span>
 			<!-- <span> -->
 				<!-- <label>river</label> -->
-				<!-- <input type="range" min="0" max="10" value="1" class="slider" id="riverSize"> -->
+				<!-- <input type="range" min="0" max="10" value="1" class="slider" id="riverSize"></input> -->
 			<!-- </span> -->
 			<!-- <span> -->
 				<!-- <label>road</label> -->
-				<!-- <input type="range" min="0" max="10" value="1" class="slider" id="roadSize"> -->
+				<!-- <input type="range" min="0" max="10" value="1" class="slider" id="roadSize"></input> -->
 			<!-- </span> -->
 			<!-- <span> -->
 				<!-- <label>cliffs</label> -->
-				<!-- <input type="range" min="0" max="10" value="1" class="slider" id="cliffsDensity"> -->
+				<!-- <input type="range" min="0" max="10" value="1" class="slider" id="cliffsDensity"></input> -->
 			<!-- </span> -->
 			<span>
 				<label>clearings</label>
-				<input type="range" min="0" max="30" class="slider" id="clearings">
+				<input type="range" min="0" max="30" class="slider" id="clearings"></input>
 			</span>
 			<span>
 				<label>cl.size</label>
-				<input type="range" min="0" max="200" class="slider" id="clearingSize">
+				<input type="range" min="0" max="200" class="slider" id="clearingSize"></input>
 			</span>
 		</p>
 		<p>
@@ -68,38 +68,43 @@
 			</span>
 			<span>
 				<label>center rand.</label>
-				<input type="range" min="0" max="150" class="slider" id="centerRandomness">
+				<input type="range" min="0" max="150" class="slider" id="centerRandomness"></input>
 			</span>
 			<span>
 				<label>tree size</label>
-				<input type="range" min="10" max="100" class="slider" id="treeSize">
+				<input type="range" min="10" max="100" class="slider" id="treeSize"></input>
 			</span>
 			<span>
 				<label>tree steps</label>
-				<input type="range" min="1" max="15" class="slider" id="treeSteps">
+				<input type="range" min="1" max="15" class="slider" id="treeSteps"></input>
 			</span>
 			<span>
 				<label>serr. ampl.</label>
-				<input type="range" min="0" max="400" class="slider" id="serrationAmplitude">
+				<input type="range" min="0" max="400" class="slider" id="serrationAmplitude"></input>
 			</span>
 			<span>
 				<label>serr. freq.</label>
-				<input type="range" min="0" max="400" class="slider" id="serrationFrequency">
+				<input type="range" min="0" max="400" class="slider" id="serrationFrequency"></input>
 			</span>
 			<span>
 				<label>serr. rand.</label>
-				<input type="range" min="0" max="400" class="slider" id="serrationRandomness">
+				<input type="range" min="0" max="400" class="slider" id="serrationRandomness"></input>
 			</span>
 			<span>
 				<label>color rand.</label>
-				<input type="range" min="0" max="100" class="slider" id="colorRandomness">
+				<input type="range" min="0" max="100" class="slider" id="colorRandomness"></input>
+			</span>
+			<span>
+				<label>background</label>
+				<input type="range" min="0" max="3" class="slider" id="backgroundNo"></input>
 			</span>
 		</p>
 	</form>
 	<p>
 		<button id="resetParameters">Reset to defaults</button>
 		<button id="randomizeParameters">Randomize parameters</button>
-		<button id="generate">Generate different seed (F5)</button>
+		<button id="generate">Generate similar (F5)</button>
+		<!-- <button id="clearStorage">Clear storage</button> -->
 	</p>
 	<canvas id="canvas" width="200" height="200">
 	</canvas>
