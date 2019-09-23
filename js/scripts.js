@@ -21,8 +21,6 @@ function init()
 	
 	//drawPerlin(canvas, context);
 	
-
-	
 	saveParametersToLocalStorage();
 	
     if( canvas.getContext )
@@ -45,6 +43,14 @@ function addListener(name) {
 }
 
 function addListeners() {
+	document.getElementById("resetParameters").addEventListener('click', (event) => {
+		console.log("RESET");
+		resetParameters();
+	});
+	document.getElementById("randomizeParameters").addEventListener('click', (event) => {
+		console.log("RANDOMIZE");
+		randomizeParameters();
+	});
 	document.image.addEventListener('load', (event) => {
 		document.redrawNeeded = true;
 	});
@@ -107,8 +113,10 @@ function saveParametersToLocalStorage() {
 
 function loadParametersFromLocalStorage() {
 	var defaultsWereSaved = window.localStorage.getItem("initialized");
-	if (!defaultsWereSaved)
+	if (!defaultsWereSaved) {
+		resetParameters();
 		return;
+	}
 	load("gridType");
 	load("width");
 	load("height");
@@ -126,6 +134,50 @@ function loadParametersFromLocalStorage() {
 	load("clearings");
 	load("clearingSize");
 	load("treeSteps");
+}
+
+function resetParameters() {
+	document.getElementById("gridType").value = -1;
+	document.getElementById("width").value = 1920;
+	document.getElementById("height").value = 1080;
+	document.getElementById("seed").value = 1;
+	document.getElementById("treeDensity").value = 40;
+	document.getElementById("stoneDensity").value = 40;
+	document.getElementById("centerRandomness").value = 30;
+	document.getElementById("leavedTreeProportion").value = 50;
+	document.getElementById("treeSize").value = 30;
+	document.getElementById("treeSeparation").value = 90;
+	document.getElementById("serrationAmplitude").value = 100;
+	document.getElementById("serrationFrequency").value = 100;
+	document.getElementById("serrationRandomness").value = 100;
+	document.getElementById("colorRandomness").value = 20;
+	document.getElementById("clearings").value = 5;
+	document.getElementById("clearingSize").value = 40;
+	document.getElementById("treeSteps").value = 3;
+	saveParametersToLocalStorage();
+	document.redrawNeeded = true;
+}
+
+function randomizeParameters() {
+	// document.getElementById("gridType").value = -1;
+	// document.getElementById("width").value = 1920;
+	// document.getElementById("height").value = 1080;
+	document.getElementById("seed").value = Math.round(Math.random() * 65536);
+	document.getElementById("treeDensity").value = Math.round(Math.random() * 100);
+	document.getElementById("stoneDensity").value = Math.round(Math.random() * 20 * Math.random() * 5);
+	document.getElementById("centerRandomness").value = Math.round(30);
+	document.getElementById("leavedTreeProportion").value = Math.round(Math.random() * 100);
+	document.getElementById("treeSize").value = Math.round(20) + Math.round(Math.random() * 20);
+	document.getElementById("treeSeparation").value = Math.round(80 + Math.random() * 20);
+	document.getElementById("serrationAmplitude").value = Math.round(80 + Math.random() * 40);
+	document.getElementById("serrationFrequency").value = Math.round(80 + Math.random() * 40);
+	document.getElementById("serrationRandomness").value = Math.round(100);
+	document.getElementById("colorRandomness").value = Math.round(20);
+	document.getElementById("clearings").value = Math.round(3 + Math.random() * 10);
+	document.getElementById("clearingSize").value = Math.round(30 + Math.random() * 20);
+	document.getElementById("treeSteps").value = Math.round(3 + Math.random() * 2);
+	saveParametersToLocalStorage();
+	document.redrawNeeded = true;
 }
 
 function getPerlin(x,y) {
@@ -463,7 +515,6 @@ function drawRiver(canvas, context, angles, midpoints, widths, serrationAmplitud
 }
 
 function run(dt, forceRedraw) {
-	console.log(forceRedraw);
 	window.requestAnimationFrame(run);
 	
 	if (!document.redrawNeeded && !forceRedraw)

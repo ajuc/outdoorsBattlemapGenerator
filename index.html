@@ -14,31 +14,31 @@
 		<p>
 			<span>
 				<label>seed</label>
-				<input type="number" maxlength="8" size="8" placeholder="1" id="seed"></input>
+				<input type="number" maxlength="8" size="8" id="seed"></input>
 			</span>
 			<span>
 				<label>w</label>
-				<input type="number" min="0" max= "4096" value="1920" id="width"></input>
+				<input type="number" min="0" max= "4096" id="width"></input>
 			</span>
 			<span>
 				<label>h</label>
-				<input type="number" min="0" max= "4096" value="1080" id="height"></input>
+				<input type="number" min="0" max= "4096" id="height"></input>
 			</span>
 			<span>
 				<label>tree</label>
-				<input type="range" min="0" max="400" value="40" class="slider" id="treeDensity">
+				<input type="range" min="0" max="400" class="slider" id="treeDensity">
 			</span>
 			<span>
 				<label>t.sep.</label>
-				<input type="range" min="0" max="200" value="90" class="slider" id="treeSeparation">
+				<input type="range" min="0" max="200" class="slider" id="treeSeparation">
 			</span>
 			<span>
 				<label>t.type</label>
-				<input type="range" min="0" max="100" value="50" class="slider" id="leavedTreeProportion">
+				<input type="range" min="0" max="100" class="slider" id="leavedTreeProportion">
 			</span>
 			<span>
 				<label>stone</label>
-				<input type="range" min="0" max="400" value="40" class="slider" id="stoneDensity">
+				<input type="range" min="0" max="400" class="slider" id="stoneDensity">
 			</span>
 			<!-- <span> -->
 				<!-- <label>river</label> -->
@@ -54,54 +54,52 @@
 			<!-- </span> -->
 			<span>
 				<label>clearings</label>
-				<input type="range" min="0" max="30" value="5" class="slider" id="clearings">
+				<input type="range" min="0" max="30" class="slider" id="clearings">
 			</span>
 			<span>
 				<label>cl.size</label>
-				<input type="range" min="0" max="200" value="50" class="slider" id="clearingSize">
+				<input type="range" min="0" max="200" class="slider" id="clearingSize">
 			</span>
 		</p>
 		<p>
 			<span>
 				<label>grid</label>
-				<input type="range"  min="-1" max="1" value="-1" class="slider" id="gridType"></input>
+				<input type="range"  min="-1" max="1" class="slider" id="gridType"></input>
 			</span>
 			<span>
 				<label>center rand.</label>
-				<input type="range" min="0" max="150" value="30" class="slider" id="centerRandomness">
+				<input type="range" min="0" max="150" class="slider" id="centerRandomness">
 			</span>
 			<span>
 				<label>tree size</label>
-				<input type="range" min="10" max="100" value="30" class="slider" id="treeSize">
+				<input type="range" min="10" max="100" class="slider" id="treeSize">
 			</span>
 			<span>
 				<label>tree steps</label>
-				<input type="range" min="1" max="15" value="3" class="slider" id="treeSteps">
+				<input type="range" min="1" max="15" class="slider" id="treeSteps">
 			</span>
 			<span>
 				<label>serr. ampl.</label>
-				<input type="range" min="0" max="400" value="100" class="slider" id="serrationAmplitude">
+				<input type="range" min="0" max="400" class="slider" id="serrationAmplitude">
 			</span>
 			<span>
 				<label>serr. freq.</label>
-				<input type="range" min="0" max="400" value="100" class="slider" id="serrationFrequency">
+				<input type="range" min="0" max="400" class="slider" id="serrationFrequency">
 			</span>
 			<span>
 				<label>serr. rand.</label>
-				<input type="range" min="0" max="400" value="100" class="slider" id="serrationRandomness">
+				<input type="range" min="0" max="400" class="slider" id="serrationRandomness">
 			</span>
 			<span>
 				<label>color rand.</label>
-				<input type="range" min="0" max="100" value="20" class="slider" id="colorRandomness">
+				<input type="range" min="0" max="100" class="slider" id="colorRandomness">
 			</span>
 		</p>
-		<!-- <p>
-			<button id="resetParameters">Reset parameters</button>
-			<button id="randomizeParameters">Randomize parameters</button>
-			<button id="generate">Generate</button>
-			<button id="randomizeAndGenerate">Randomize and generate</button>
-		</p> -->
 	</form>
+	<p>
+		<button id="resetParameters">Reset to defaults</button>
+		<button id="randomizeParameters">Randomize parameters</button>
+	</p>
 	<canvas id="canvas" width="200" height="200">
 	</canvas>
 	<script src="js/bezier.js"></script>
