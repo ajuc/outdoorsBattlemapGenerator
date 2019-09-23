@@ -9,6 +9,9 @@ function init()
 	canvas.width = document.getElementById("width").value;
 	canvas.height = document.getElementById("height").value;
 	
+	document.image = new Image();
+	document.image.src = "gfx/pattern.png";
+	
 	addListeners();
 	
 	document.getElementById("seed").value = Math.round(Math.random()*655536);
@@ -18,34 +21,42 @@ function init()
 	
 	//drawPerlin(canvas, context);
 	
-	document.image = new Image();
-	document.image.src = "gfx/pattern.png";
+
+	
+	saveParametersToLocalStorage();
 	
     if( canvas.getContext )
     {
         //setup();
         if (typeof (canvas.getContext) !== undefined) {
-			run();
+			run(0, true);
 		}
     }
-	
-	saveParametersToLocalStorage();
 }
 
 function addListener(name) {
 	document.getElementById(name).addEventListener('change', (event) => {
 		save(name);
+		document.redrawNeeded = true;
+	});
+	document.getElementById(name).addEventListener('input', (event) => {
+		document.redrawNeeded = true;
 	});
 }
 
 function addListeners() {
+	document.image.addEventListener('load', (event) => {
+		document.redrawNeeded = true;
+	});
 	document.getElementById("width").addEventListener('change', (event) => {
 		canvas.width = event.target.value;
 		save("width");
+		document.redrawNeeded = true;
 	});
 	document.getElementById("height").addEventListener('change', (event) => {
 		canvas.height = event.target.value;
 		save("height");
+		document.redrawNeeded = true;
 	});
 	addListener("gridType");
 	addListener("seed");
@@ -451,8 +462,13 @@ function drawRiver(canvas, context, angles, midpoints, widths, serrationAmplitud
 	// context.stroke();
 }
 
-function run() {
+function run(dt, forceRedraw) {
+	console.log(forceRedraw);
 	window.requestAnimationFrame(run);
+	
+	if (!document.redrawNeeded && !forceRedraw)
+		return;
+	
 	var canvas = document.getElementById("canvas");
 	var context = canvas.getContext("2d");
 	
@@ -540,4 +556,5 @@ function run() {
 	}
 	context.restore();
 	
+	document.redrawNeeded = false;
 }
