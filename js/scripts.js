@@ -51,6 +51,10 @@ function addListeners() {
 		console.log("RANDOMIZE");
 		randomizeParameters();
 	});
+	document.getElementById("generate").addEventListener('click', (event) => {
+		console.log("GENERATE");
+		location.reload();
+	});
 	document.image.addEventListener('load', (event) => {
 		document.redrawNeeded = true;
 	});
