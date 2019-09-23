@@ -51,6 +51,7 @@ function load(name) {
 
 function saveParametersToLocalStorage() {
 	save("gridType");
+	save("gridSize");
 	save("width");
 	save("height");
 	save("seed");
@@ -80,6 +81,7 @@ function loadParametersFromLocalStorage() {
 		return;
 	}
 	load("gridType");
+	load("gridSize");
 	load("width");
 	load("height");
 	load("seed");
@@ -133,6 +135,7 @@ function addListeners() {
 		document.redrawNeeded = true;
 	});
 	addListener("gridType");
+	addListener("gridSize");
 	addListener("seed");
 	addListener("treeDensity");
 	addListener("stoneDensity");
@@ -159,6 +162,7 @@ function clearStorage() {
 
 function resetParameters() {
 	document.getElementById("gridType").value = -1;
+	document.getElementById("gridSize").value = 20;
 	document.getElementById("width").value = 1920;
 	document.getElementById("height").value = 1080;
 	document.getElementById("seed").value = 1;
@@ -183,6 +187,7 @@ function resetParameters() {
 
 function randomizeParameters() {
 	// document.getElementById("gridType").value = -1;
+	// document.getElementById("gridSize").value = 20;
 	// document.getElementById("width").value = 1920;
 	// document.getElementById("height").value = 1080;
 	// document.getElementById("backgroundNo").value = 1;
@@ -415,7 +420,6 @@ function drawRectGrid(canvas, context, radius) {
 
 function drawHexGrid(canvas, context, radius) {
 	var x0, y0;
-	
 	context.beginPath();
 	context.strokeStyle = rgba(0, 0, 0, 0.1);
 	context.moveTo(0,0);
@@ -557,11 +561,12 @@ function run(dt, forceRedraw) {
 
 	drawBackground(canvas, context, rng);
 	
-	var gridType = document.getElementById("gridType").value;
+	var gridType = Math.round(document.getElementById("gridType").value);
+	var gridSize = Math.round(document.getElementById("gridSize").value);
 	if (gridType > 0)
-		drawRectGrid(canvas, context, 20);
+		drawRectGrid(canvas, context, gridSize);
 	else if (gridType < 0)
-		drawHexGrid(canvas, context, 20);
+		drawHexGrid(canvas, context, gridSize);
 
 	var howMuchTrees = (canvas.width/130 * canvas.height/130) * document.getElementById("treeDensity").value * 0.05;
 	var howMuchStones = (canvas.width/130 * canvas.height/130) * document.getElementById("stoneDensity").value * 0.1;
