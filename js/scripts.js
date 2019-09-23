@@ -396,8 +396,8 @@ function run() {
 	var serrationFrequency = document.getElementById("serrationFrequency").value * 0.01;
 	var serrationRandomness = document.getElementById("serrationRandomness").value * 0.01;
 	var colorRandomness = document.getElementById("colorRandomness").value * 0.01;
-	var riverSize = document.getElementById("riverSize").value;
-	var roadSize = document.getElementById("roadSize").value;
+	// var riverSize = document.getElementById("riverSize").value;
+	// var roadSize = document.getElementById("roadSize").value;
 	var clearings = document.getElementById("clearings").value;
 	var clearingSize = document.getElementById("clearingSize").value * 0.01;
 	var treeSteps = document.getElementById("treeSteps").value;
@@ -417,10 +417,10 @@ function run() {
 		drawStone(canvas, context, rng() * canvas.width, rng() * canvas.height, 5 + rng() * 9, rng, colorRandomness);
 	}
 	
-	if (riverSize > 0) {
-		rng = createRNG(seed);
-		drawRiver(canvas, context, (rng()-0.5)*10, (rng()-0.5)*10, rng()*canvas.width, riverSize * 40, serrationAmplitude, serrationFrequency, serrationRandomness, rng);
-	}
+	// if (riverSize > 0) {
+		// rng = createRNG(seed);
+		// drawRiver(canvas, context, (rng()-0.5)*10, (rng()-0.5)*10, rng()*canvas.width, riverSize * 40, serrationAmplitude, serrationFrequency, serrationRandomness, rng);
+	// }
 	
 	rng = createRNG(seed);
 	for (i=0; i<howMuchTrees; i++) {
