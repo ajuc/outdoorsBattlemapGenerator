@@ -52,6 +52,7 @@ function load(name) {
 function saveParametersToLocalStorage() {
 	save("gridType");
 	save("gridSize");
+	save("gridOpacity");
 	save("width");
 	save("height");
 	save("seed");
@@ -60,6 +61,7 @@ function saveParametersToLocalStorage() {
 	save("centerRandomness");
 	save("leavedTreeProportion");
 	save("treeSize");
+	save("treeColor");
 	save("treeSeparation");
 	save("serrationAmplitude");
 	save("serrationFrequency");
@@ -82,6 +84,7 @@ function loadParametersFromLocalStorage() {
 	}
 	load("gridType");
 	load("gridSize");
+	load("gridOpacity");
 	load("width");
 	load("height");
 	load("seed");
@@ -90,6 +93,7 @@ function loadParametersFromLocalStorage() {
 	load("centerRandomness");
 	load("leavedTreeProportion");
 	load("treeSize");
+	load("treeColor");
 	load("treeSeparation");
 	load("serrationAmplitude");
 	load("serrationFrequency");
@@ -136,12 +140,14 @@ function addListeners() {
 	});
 	addListener("gridType");
 	addListener("gridSize");
+	addListener("gridOpacity");
 	addListener("seed");
 	addListener("treeDensity");
 	addListener("stoneDensity");
 	addListener("centerRandomness");
 	addListener("leavedTreeProportion");
 	addListener("treeSize");
+	addListener("treeColor");
 	addListener("treeSeparation");
 	addListener("serrationAmplitude");
 	addListener("serrationFrequency");
@@ -163,6 +169,7 @@ function clearStorage() {
 function resetParameters() {
 	document.getElementById("gridType").value = -1;
 	document.getElementById("gridSize").value = 20;
+	document.getElementById("gridOpacity").value = 15;
 	document.getElementById("width").value = 1920;
 	document.getElementById("height").value = 1080;
 	document.getElementById("seed").value = 1;
@@ -171,6 +178,7 @@ function resetParameters() {
 	document.getElementById("centerRandomness").value = 30;
 	document.getElementById("leavedTreeProportion").value = 50;
 	document.getElementById("treeSize").value = 30;
+	document.getElementById("treeColor").value = 100;
 	document.getElementById("treeSeparation").value = 90;
 	document.getElementById("serrationAmplitude").value = 100;
 	document.getElementById("serrationFrequency").value = 100;
@@ -188,9 +196,11 @@ function resetParameters() {
 function randomizeParameters() {
 	// document.getElementById("gridType").value = -1;
 	// document.getElementById("gridSize").value = 20;
+	// document.getElementById("gridOpacity").value = 1;
 	// document.getElementById("width").value = 1920;
 	// document.getElementById("height").value = 1080;
 	// document.getElementById("backgroundNo").value = 1;
+	// document.getElementById("treeColor").value = 100;
 	document.getElementById("seed").value = Math.round(Math.random() * 65536);
 	document.getElementById("treeDensity").value = Math.round(Math.random() * 100);
 	document.getElementById("stoneDensity").value = Math.round(Math.random() * 20 * Math.random() * 5);
@@ -325,7 +335,7 @@ function drawTreeRounded(
 					serrationAmplitudeMin, serrationAmplitudeMax,
 					serrationFrequencyMin, serrationFrequencyMax,
 					serrationRngFactorX, serrationRngFactorY,
-					colorRandomness,
+					colorRandomness, treeColor,
 					seed) {
 	var rng = createRNG(seed);
 	var stepNo = 0.0;
@@ -361,13 +371,13 @@ function drawTreeRounded(
 			r + (rEnd-r) * ((stepNo+1)/(steps+1)) + rr,
 			g + (gEnd-g) * ((stepNo+1)/(steps+1)) + gg,
 			b + (bEnd-b) * ((stepNo+1)/(steps+1)) + bb,
-			1.0
+			treeColor
 		));
 		grd.addColorStop(1, rgba(
 			r + (rEnd-r) * (stepNo/(steps+1)) + rr,
 			g + (gEnd-g) * (stepNo/(steps+1)) + gg,
 			b + (bEnd-b) * (stepNo/(steps+1)) + bb,
-			0.9
+			treeColor * 0.9
 		));
 		// Fill with gradient
 		context.fillStyle = grd;
@@ -399,12 +409,12 @@ function drawTreeRounded(
 	}
 }
 
-function drawRectGrid(canvas, context, radius) {
+function drawRectGrid(canvas, context, radius, gridOpacity) {
 	var x0, y0;
 	
 	context.beginPath();
 	context.lineWidth = 1;
-	context.strokeStyle = rgba(0, 0, 0, 0.1);
+	context.strokeStyle = rgba(0, 0, 0, gridOpacity);
 	context.moveTo(0,0);
 	for (y0=0; y0<canvas.height+radius*2; y0+=(radius * 2)) {
 		context.moveTo(0, y0);
@@ -418,10 +428,10 @@ function drawRectGrid(canvas, context, radius) {
 	context.stroke();
 }
 
-function drawHexGrid(canvas, context, radius) {
+function drawHexGrid(canvas, context, radius, gridOpacity) {
 	var x0, y0;
 	context.beginPath();
-	context.strokeStyle = rgba(0, 0, 0, 0.1);
+	context.strokeStyle = rgba(0, 0, 0, gridOpacity);
 	context.moveTo(0,0);
 	var dx = 0;
 	var dy = 0;
@@ -465,11 +475,11 @@ function collidesWithPreviousTrees(list, x, y, r) {
 	return false;
 }
 
-function drawStone(canvas, context, x, y, r, rng, colorRandomness) {
+function drawStone(canvas, context, x, y, r, rng, colorRandomness, fillOpacity) {
 	var cr = (rng() * 256.0 - 128.0)*colorRandomness;
 	var grd = context.createRadialGradient(x-r/3, y-r/3, r/8, x-r/3, y-r/3, r * 2);
-	grd.addColorStop(0, rgb(240+cr, 240+cr, 240+cr));
-	grd.addColorStop(1, rgb(50+cr,50+cr,50+cr));
+	grd.addColorStop(0, rgba(240+cr, 240+cr, 240+cr, fillOpacity));
+	grd.addColorStop(1, rgba(50+cr,50+cr,50+cr, fillOpacity));
 	
 	// Fill with gradient
 	context.lineWidth = 1;
@@ -563,10 +573,11 @@ function run(dt, forceRedraw) {
 	
 	var gridType = Math.round(document.getElementById("gridType").value);
 	var gridSize = Math.round(document.getElementById("gridSize").value);
+	var gridOpacity = document.getElementById("gridOpacity").value * 0.01;
 	if (gridType > 0)
-		drawRectGrid(canvas, context, gridSize);
+		drawRectGrid(canvas, context, gridSize, gridOpacity);
 	else if (gridType < 0)
-		drawHexGrid(canvas, context, gridSize);
+		drawHexGrid(canvas, context, gridSize, gridOpacity);
 
 	var howMuchTrees = (canvas.width/130 * canvas.height/130) * document.getElementById("treeDensity").value * 0.05;
 	var howMuchStones = (canvas.width/130 * canvas.height/130) * document.getElementById("stoneDensity").value * 0.1;
@@ -575,6 +586,7 @@ function run(dt, forceRedraw) {
 	var centerRandomness = 15.0 * document.getElementById("centerRandomness").value * 0.01;
 	var leavedTreeProportion = document.getElementById("leavedTreeProportion").value * 0.01; //how high percent of the trees are simple
 	var treeSize = 40 * document.getElementById("treeSize").value * 0.01;
+	var treeColor = document.getElementById("treeColor").value * 0.01;
 	var treeSeparation = document.getElementById("treeSeparation").value * 0.01;
 	var serrationAmplitude = document.getElementById("serrationAmplitude").value * 0.01;
 	var serrationFrequency = document.getElementById("serrationFrequency").value * 0.01;
@@ -598,7 +610,7 @@ function run(dt, forceRedraw) {
 
 	rng = createRNG(seed);
 	for (i=0; i<howMuchStones * 1; i++) {
-		drawStone(canvas, context, rng() * canvas.width, rng() * canvas.height, 5 + rng() * 9, rng, colorRandomness);
+		drawStone(canvas, context, rng() * canvas.width, rng() * canvas.height, 5 + rng() * 9, rng, colorRandomness, treeColor);
 	}
 	
 	// if (riverSize > 0) {
@@ -619,7 +631,7 @@ function run(dt, forceRedraw) {
 					5*serrationAmplitude, 2*serrationAmplitude,
 					7*serrationFrequency, 4*serrationFrequency,
 					0.5*serrationRandomness, 0.14*serrationRandomness,
-					colorRandomness,
+					colorRandomness, treeColor,
 					rng()
 				);
 				listOfCircles.push({x:x0, y:y0, r:r0*2*treeSeparation});
@@ -629,7 +641,7 @@ function run(dt, forceRedraw) {
 					5*serrationAmplitude, 2*serrationAmplitude,
 					9*serrationFrequency, 4*serrationFrequency,
 					0.6*serrationRandomness, 0.24*serrationRandomness,
-					colorRandomness,
+					colorRandomness, treeColor,
 					rng()
 				);
 				listOfCircles.push({x:x0, y:y0, r:r0*4*treeSeparation});
