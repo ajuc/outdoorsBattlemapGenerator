@@ -5,8 +5,6 @@ function init()
 	//document.image.crossOrigin = "Anonymous";
 	
     var canvas = document.getElementById("canvas");
-    //canvas.width = document.body.clientWidth; //document.width is obsolete
-    //canvas.height = document.body.clientHeight; //document.height is obsolete
 
 	loadParametersFromLocalStorage();
 	
@@ -20,13 +18,10 @@ function init()
 	
 	var context = canvas.getContext("2d");
 	
-	//drawPerlin(canvas, context);
-	
 	saveParametersToLocalStorage();
 	
     if( canvas.getContext )
     {
-        //setup();
         if (typeof (canvas.getContext) !== undefined) {
 			run(0, true);
 		}
@@ -59,6 +54,7 @@ function saveParametersToLocalStorage() {
 	save("seed");
 	save("treeDensity");
 	save("stoneDensity");
+	save("riverSize");
 	save("centerRandomness");
 	save("leavedTreeProportion");
 	save("treeSize");
@@ -91,6 +87,7 @@ function loadParametersFromLocalStorage() {
 	load("seed");
 	load("treeDensity");
 	load("stoneDensity");
+	load("riverSize");
 	load("centerRandomness");
 	load("leavedTreeProportion");
 	load("treeSize");
@@ -153,6 +150,7 @@ function addListeners() {
 	addListener("seed");
 	addListener("treeDensity");
 	addListener("stoneDensity");
+	addListener("riverSize");
 	addListener("centerRandomness");
 	addListener("leavedTreeProportion");
 	addListener("treeSize");
@@ -178,16 +176,17 @@ function clearStorage() {
 function resetParameters() {
 	document.getElementById("gridType").value = -1;
 	document.getElementById("gridSize").value = 20;
-	document.getElementById("gridOpacity").value = 15;
+	document.getElementById("gridOpacity").value = 30;
 	document.getElementById("width").value = 1920;
 	document.getElementById("height").value = 1080;
 	document.getElementById("seed").value = 1;
 	document.getElementById("treeDensity").value = 40;
 	document.getElementById("stoneDensity").value = 40;
+	document.getElementById("riverSize").value = 3;
 	document.getElementById("centerRandomness").value = 30;
-	document.getElementById("leavedTreeProportion").value = 50;
+	document.getElementById("leavedTreeProportion").value = 90;
 	document.getElementById("treeSize").value = 30;
-	document.getElementById("treeColor").value = 100;
+	document.getElementById("treeColor").value = 120;
 	document.getElementById("treeSeparation").value = 90;
 	document.getElementById("serrationAmplitude").value = 100;
 	document.getElementById("serrationFrequency").value = 100;
@@ -196,7 +195,7 @@ function resetParameters() {
 	document.getElementById("clearings").value = 5;
 	document.getElementById("clearingSize").value = 40;
 	document.getElementById("treeSteps").value = 3;
-	document.getElementById("backgroundNo").value = 1;
+	document.getElementById("backgroundNo").value = 3;
 	backgroundChanged(document.getElementById("backgroundNo").value);
 	saveParametersToLocalStorage();
 	document.redrawNeeded = true;
@@ -213,6 +212,7 @@ function randomizeParameters() {
 	document.getElementById("seed").value = Math.round(Math.random() * 65536);
 	document.getElementById("treeDensity").value = Math.round(Math.random() * 100);
 	document.getElementById("stoneDensity").value = Math.round(Math.random() * 20 * Math.random() * 5);
+	document.getElementById("riverSize").value = Math.random() > 0.5 ? Math.round(Math.random() * 10) : 0;
 	document.getElementById("centerRandomness").value = Math.round(30);
 	document.getElementById("leavedTreeProportion").value = Math.round(Math.random() * 100);
 	document.getElementById("treeSize").value = Math.round(20) + Math.round(Math.random() * 20);
@@ -285,57 +285,6 @@ function saw(x) {
 
 function roundedSaw(x) {
 	return 2.0 * Math.abs(Math.sin(x)) - 0.5;
-}
-
-function drawTree(context, centerX, centerY, size, centerRandomness,
-				  steps, angleSteps,
-				  serrationAmplitudeMin, serrationAmplitudeMax, serrationFrequencyMin, serrationFrequencyMax,
-				  seed) {
-	var rng = createRNG(seed);
-	var stepNo = 0.0;
-	var angle = 0.0;
-	var angleStep = 360.0 / angleSteps;
-	
-	var x, y, lastX, lastY, color, localSize, radianAngle, serrationAmplitude, serrationFrequency;
-	var r = 0;
-	var g = 120;
-	var b = 0;
-	var rEnd = 40;
-	var gEnd = 200;
-	var bEnd = 110;
-	var sizeForStep = 0;
-	
-	for (stepNo = 0; stepNo < steps; stepNo += 1) {
-		centerX = centerX + centerRandomness * (stepNo/steps) * (saw((seed + stepNo * 131.0) * 131.0));
-		centerY = centerY + centerRandomness * (stepNo/steps) * (saw((seed + stepNo * 131.0) * 151.0));
-		
-		context.fillStyle = rgb(
-			r + (rEnd-r) * (stepNo/steps),
-			g + (gEnd-g) * (stepNo/steps),
-			b + (bEnd-b) * (stepNo/steps)
-		);
-		context.lineWidth = 1; //Math.max(1, 3*stepNo/steps);
-		serrationAmplitude = (serrationAmplitudeMin + (serrationAmplitudeMax - serrationAmplitudeMin) * (stepNo/steps));
-		serrationFrequency = (serrationFrequencyMin + (serrationFrequencyMax - serrationFrequencyMin) * (stepNo/steps));
-		sizeForStep = (size * (1 + steps-stepNo + 0.3 * rng())/steps);
-		context.beginPath();
-		for (angle = 0; angle < 360.0; angle += angleStep) {
-			radianAngle = (seed + angle) * Math.PI / 180.0;
-			localSize = sizeForStep + serrationAmplitude * saw(serrationFrequency * (radianAngle + saw(radianAngle * 1001 + rng())*0.16) + rng() * 3);
-			lastX = x;
-			lastY = y;
-			x = centerX + localSize * Math.cos(radianAngle);
-			y = centerY + localSize * Math.sin(radianAngle);
-			if(angle > 0) {
-				context.lineTo(x, y);
-			} else {
-				context.moveTo(x, y);
-			}
-		}
-		context.closePath();
-		context.fill();
-		context.stroke();
-	}
 }
 
 function drawTreeRounded(
@@ -509,28 +458,7 @@ function drawBackground(canvas, context, rng) {
     context.fillRect(0, 0, canvas.width, canvas.height);
 }
 
-// function drawRiver(canvas, context, A, B, C, width, serrationAmplitude, serrationFrequency, serrationRandomness, rng) {
-	// var x0, y0, x1, y1;
-	
-	// if (Math.abs(A) < 0.000001) {
-		// x0 = 0;
-		// y0 = -C/B;
-		// x1 = canvas.width;
-		// y1 = -C/B;
-	// } else {
-		// x0 = -C/A;
-		// y0 = 0;
-		// x1 = (-C-B*canvas.height)/A;
-		// y1 = canvas.height;
-	// }
-	// context.lineWidth = width;
-	// context.strokeStyle = rgba(0, 0, 255, 0.5);
-	// context.moveTo(x0, y0);
-	// context.lineTo(x1, y1);
-	// context.stroke();
-// }
-
-function drawRiver(canvas, context, angles, midpoints, widths, serrationAmplitude, serrationFrequency, serrationRandomness, rng) {
+function drawRiver(canvas, context, angles, midpoints, widths, serrationAmplitude, serrationFrequency, serrationRandomness, rng, outColliderCircles) {
 	// console.assert(angles.length >= 2 && angles.length <= 3);
 	// console.assert(midpoints.length <= 3);
 	// console.assert(widths.length = angles.length);
@@ -541,21 +469,70 @@ function drawRiver(canvas, context, angles, midpoints, widths, serrationAmplitud
 	var widthIndex = 0;
 	
 	var outerRingRadius = Math.sqrt((canvas.width/2)*(canvas.width/2) + (canvas.height/2)*(canvas.height/2));
+	var innerRingRadius = Math.sqrt((canvas.width/10)*(canvas.width/10) + (canvas.height/10)*(canvas.height/10));
 	var pointsOnOuterRing = [];
+	var pointsOnOuterRingIndex = 0;
+	var pointsOnInnerRing = [];
+	var pointsOnInnerRingIndex = 0;
+	var points = [];
+	var pointsIndex = 0;
+	
 	for (angleIndex = 0; angleIndex < angles.length; angleIndex++) {
 		pointsOnOuterRing.push({
 			x:canvas.width/2 + Math.cos(angles[angleIndex])*outerRingRadius,
 			y:canvas.height/2 + Math.sin(angles[angleIndex])*outerRingRadius,
 		});
+		pointsOnInnerRing.push({
+			x:canvas.width/2 + Math.cos(angles[angleIndex])*innerRingRadius,
+			y:canvas.height/2 + Math.sin(angles[angleIndex])*innerRingRadius,
+		});
 	}
 
+	points.push(pointsOnOuterRing[0]);
+	points.push(pointsOnInnerRing[0]);
 	for (midpointIndex = 0; midpointIndex < midpoints.length; midpointIndex++) {
-		
+		points.push(midpoints[midpointIndex]);
 	}
+	points.push(pointsOnInnerRing[1]);
+	points.push(pointsOnOuterRing[1]);
+	
 
 	for (widthIndex = 0; widthIndex < widths.length; widthIndex++) {
 	}
+
 	
+	let graph = new Graph("graph");
+
+
+	var pointsForBezier = [];
+
+	for (pointsIndex=0; pointsIndex<points.length; pointsIndex++) {
+		pointsForBezier.push(new Point(points[pointsIndex].x, points[pointsIndex].y));
+	}
+	let bezierCurve = new BezierCurve(pointsForBezier, 4);
+	context.lineWidth = 1;
+	context.strokeStyle = rgba(0, 0, 0, 0.0);
+	context.fillStyle = rgba(rng()*16, rng()*64, 200+56*rng(), 1.0);
+	//graph.drawCurveFromPoints(canvas, context, bezierCurve.drawingPoints);
+	var t=0.0;
+	var i=0;
+	for (t=0.0; t<1.0; t+= widths[0]/2048.0) {
+		var p = bezierCurve.calculateNewPoint(t);
+		context.beginPath();
+		context.ellipse(p.x, p.y, 5 * widths[0], 5 * widths[0], 0, 0, Math.PI * 2);
+		if (i % 8 == 0)
+			outColliderCircles.push({x:p.x, y:p.y, r:5 * widths[0]});
+		context.lineTo(p.x, p.y);
+		context.closePath();
+		context.stroke();
+		context.fill();
+		i++;
+	}
+	context.lineWidth = 1;
+	
+	context.fillStyle = rgba(255, 255, 255, 1.0);
+	context.strokeStyle = rgba(0, 0, 0, 1.0);
+
 	// context.lineWidth = 1;
 	// context.strokeStyle = rgba(0, 0, 255, 0.5);
 	// context.moveTo(x0, y0);
@@ -590,7 +567,7 @@ function run(dt, forceRedraw) {
 
 	var howMuchTrees = (canvas.width/130 * canvas.height/130) * document.getElementById("treeDensity").value * 0.05;
 	var howMuchStones = (canvas.width/130 * canvas.height/130) * document.getElementById("stoneDensity").value * 0.1;
-	//0.125 * (1 + 7*rng());
+	var riverSize = Math.round(document.getElementById("riverSize").value);
 
 	var centerRandomness = 15.0 * document.getElementById("centerRandomness").value * 0.01;
 	var leavedTreeProportion = document.getElementById("leavedTreeProportion").value * 0.01; //how high percent of the trees are simple
@@ -601,7 +578,6 @@ function run(dt, forceRedraw) {
 	var serrationFrequency = document.getElementById("serrationFrequency").value * 0.01;
 	var serrationRandomness = document.getElementById("serrationRandomness").value * 0.01;
 	var colorRandomness = document.getElementById("colorRandomness").value * 0.01;
-	// var riverSize = document.getElementById("riverSize").value;
 	// var roadSize = document.getElementById("roadSize").value;
 	var clearings = document.getElementById("clearings").value;
 	var clearingSize = document.getElementById("clearingSize").value * 0.01;
@@ -622,10 +598,17 @@ function run(dt, forceRedraw) {
 		drawStone(canvas, context, rng() * canvas.width, rng() * canvas.height, 5 + rng() * 9, rng, colorRandomness, treeColor);
 	}
 	
-	// if (riverSize > 0) {
-		// rng = createRNG(seed);
-		// drawRiver(canvas, context, (rng()-0.5)*10, (rng()-0.5)*10, rng()*canvas.width, riverSize * 40, serrationAmplitude, serrationFrequency, serrationRandomness, rng);
-	// }
+	if (riverSize > 0) {
+		rng = createRNG(seed);
+		
+		var alpha = rng()*2*Math.PI;
+		var beta = alpha + Math.PI*0.5 + rng()*Math.PI;
+		var angles = [alpha, beta];
+		var midpoints = [{x:rng() * canvas.width, y:rng() * canvas.height}];
+		var widths = [Math.round(3*riverSize*(1+rng())), Math.round(3*riverSize*(1+rng()))];
+		
+		drawRiver(canvas, context, angles, midpoints, widths, serrationAmplitude, serrationFrequency, serrationRandomness, rng, listOfCircles);
+	}
 	
 	rng = createRNG(seed);
 	for (i=0; i<howMuchTrees; i++) {
