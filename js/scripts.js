@@ -493,7 +493,7 @@ function drawRiver(canvas, context, angles, midpoints, widths, serrationAmplitud
 	var midpointIndex = 0;
 	var widthIndex = 0;
 	
-	var outerRingRadius = Math.sqrt((canvas.width/2)*(canvas.width/2) + (canvas.height/2)*(canvas.height/2));
+	var outerRingRadius = Math.sqrt((canvas.width/2)*(canvas.width/2) + (canvas.height/2)*(canvas.height/2))+200;
 	var innerRingRadius = Math.sqrt((canvas.width/10)*(canvas.width/10) + (canvas.height/10)*(canvas.height/10));
 	var pointsOnOuterRing = [];
 	var pointsOnOuterRingIndex = 0;
@@ -536,21 +536,77 @@ function drawRiver(canvas, context, angles, midpoints, widths, serrationAmplitud
 	}
 	let bezierCurve = new BezierCurve(pointsForBezier, 4);
 	context.lineWidth = 1;
-	context.strokeStyle = rgba(0, 0, 0, 0.0);
-	context.fillStyle = rgba(rng()*16, rng()*64, 200+56*rng(), 1.0);
+	context.strokeStyle = rgba(0, 0, 0, 1.0);
+	var rr = rng()*16;
+	var gg = rng()*64;
+	var bb = 200+56*rng();
+	var fillColor = rgba(rr, gg, bb, 1.0);
+	var fillColorInside = rgba(rr*0.8, gg*0.8, bb*0.7, 1.0);
+	
+	context.fillStyle = fillColor;
 	//graph.drawCurveFromPoints(canvas, context, bezierCurve.drawingPoints);
 	var t=0.0;
 	var i=0;
-	for (t=0.0; t<1.0; t+= widths[0]/2048.0) {
-		var p = bezierCurve.calculateNewPoint(t);
-		context.beginPath();
-		context.ellipse(p.x, p.y, 5 * widths[0], 5 * widths[0], 0, 0, Math.PI * 2);
-		if (i % 4 == 0)
-			outColliderCircles.push({x:p.x, y:p.y, r:5 * widths[0]});
-		context.lineTo(p.x, p.y);
-		context.closePath();
-		context.stroke();
-		context.fill();
+	var p,lp, leftX,leftY, rightX, rightY, pLeftX, pLeftY, pRightX, pRightY;
+	for (t=0.0; t<1.0; t+= widths[0]/2048.0) { //
+		lp = p;
+		pLeftX = leftX;
+		pLeftY = leftY;
+		pRightX = rightX;
+		pRightY = rightY;
+		
+		p = bezierCurve.calculateNewPoint(t);
+		
+		outColliderCircles.push({x:p.x, y:p.y, r:5 * widths[0]});
+		
+		if (t === 0.0) {
+			context.moveTo(p.x, p.y);
+		} else {
+			var dx = p.x - lp.x;
+			var dy = p.y - lp.y;
+			var d = Math.sqrt(dx*dx+dy*dy);
+			dx/=d;
+			dy/=d;
+			var randomD = rng()*0.2;
+			var leftX = p.x - dy*(5+randomD)* widths[0];
+			var leftY = p.y + dx*(5+randomD)* widths[0];
+			var rightX = p.x + dy*(5+randomD)* widths[0];
+			var rightY = p.y - dx*(5+randomD)* widths[0];
+			
+			var grd = context.createLinearGradient(leftX, leftY, rightX, rightY);
+			grd.addColorStop(0, fillColor);
+			grd.addColorStop(0.3 + rng()*0.005, fillColorInside);
+			grd.addColorStop(0.7 - rng()*0.005, fillColorInside);
+			grd.addColorStop(1, fillColor);
+
+			context.fillStyle = grd;
+
+			context.beginPath();
+			//context.moveTo(lp.x, lp.y);
+			//context.lineTo(p.x, p.y);
+			context.strokeStyle = grd; //rgba(0, 0, 0, 1.0);
+			context.lineWidth = 1;
+			context.moveTo(pLeftX, pLeftY);
+			context.lineTo(leftX, leftY);
+			context.lineTo(rightX, rightY);
+			context.lineTo(pRightX, pRightY);
+			context.lineTo(pLeftX, pLeftY);
+			context.closePath();
+			context.fill();
+			context.stroke();
+			
+			context.beginPath();
+			//context.moveTo(lp.x, lp.y);
+			//context.lineTo(p.x, p.y);
+			context.strokeStyle = rgba(0, 0, 0, 1.0);
+			context.lineWidth = 1;
+			context.moveTo(pLeftX, pLeftY);
+			context.lineTo(leftX, leftY);
+			context.moveTo(rightX, rightY);
+			context.lineTo(pRightX, pRightY);
+			context.closePath();
+			context.stroke();
+		}
 		i++;
 	}
 	context.lineWidth = 1;
@@ -605,17 +661,6 @@ function run(dt, forceRedraw) {
 	var i=0;
 	var listOfCircles = [];
 	var x0, y0, r0;
-	for (i=0; i<clearings; i++) {
-		x0 = rng() * canvas.width;
-		y0 = rng() * canvas.height;
-		r0 = canvas.height * 0.4 * 0.5*(1 + rng()) * clearingSize;
-		listOfCircles.push({x:x0, y:y0, r:r0});
-	}
-
-	rng = createRNG(seed);
-	for (i=0; i<howMuchStones * 1; i++) {
-		drawStone(canvas, context, rng() * canvas.width, rng() * canvas.height, 5 + rng() * 9, rng, colorRandomness, treeColor);
-	}
 	
 	if (riverSize > 0) {
 		rng = createRNG(seed);
@@ -627,6 +672,22 @@ function run(dt, forceRedraw) {
 		var widths = [Math.round(3*riverSize*(1+rng())), Math.round(3*riverSize*(1+rng()))];
 		
 		drawRiver(canvas, context, angles, midpoints, widths, serrationAmplitude, serrationFrequency, serrationRandomness, rng, listOfCircles);
+	}
+	
+	rng = createRNG(seed);
+	for (i=0; i<howMuchStones * 1; i++) {
+		var xs = rng() * canvas.width;
+		var ys = rng() * canvas.height;
+		var rs = 5 + rng() * 9;
+		if (!collidesWithPreviousTrees(listOfCircles, xs, ys, 1))
+			drawStone(canvas, context, xs, ys, rs, rng, colorRandomness, treeColor);
+	}
+	
+	for (i=0; i<clearings; i++) {
+		x0 = rng() * canvas.width;
+		y0 = rng() * canvas.height;
+		r0 = canvas.height * 0.4 * 0.5*(1 + rng()) * clearingSize;
+		listOfCircles.push({x:x0, y:y0, r:r0});
 	}
 	
 	rng = createRNG(seed);
