@@ -679,6 +679,7 @@ function run(dt, forceRedraw) {
 			drawStone(canvas, context, xs, ys, rs, rng, colorRandomness, treeColor);
 	}
 	
+	rng = createRNG(seed);
 	for (i=0; i<clearings; i++) {
 		x0 = rng() * canvas.width;
 		y0 = rng() * canvas.height;
