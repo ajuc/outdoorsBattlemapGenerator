@@ -182,18 +182,18 @@ function resetParameters() {
 	document.getElementById("seed").value = 1;
 	document.getElementById("treeDensity").value = 40;
 	document.getElementById("stoneDensity").value = 40;
-	document.getElementById("riverSize").value = 3;
+	document.getElementById("riverSize").value = 2;
 	document.getElementById("centerRandomness").value = 30;
-	document.getElementById("leavedTreeProportion").value = 90;
-	document.getElementById("treeSize").value = 30;
+	document.getElementById("leavedTreeProportion").value = 95;
+	document.getElementById("treeSize").value = 35;
 	document.getElementById("treeColor").value = 120;
-	document.getElementById("treeSeparation").value = 90;
-	document.getElementById("serrationAmplitude").value = 100;
-	document.getElementById("serrationFrequency").value = 100;
-	document.getElementById("serrationRandomness").value = 100;
-	document.getElementById("colorRandomness").value = 20;
-	document.getElementById("clearings").value = 5;
-	document.getElementById("clearingSize").value = 40;
+	document.getElementById("treeSeparation").value = 60;
+	document.getElementById("serrationAmplitude").value = 130;
+	document.getElementById("serrationFrequency").value = 30;
+	document.getElementById("serrationRandomness").value = 250;
+	document.getElementById("colorRandomness").value = 30;
+	document.getElementById("clearings").value = 9;
+	document.getElementById("clearingSize").value = 30;
 	document.getElementById("treeSteps").value = 3;
 	document.getElementById("backgroundNo").value = 3;
 	backgroundChanged(document.getElementById("backgroundNo").value);
@@ -548,7 +548,7 @@ function drawRiver(canvas, context, angles, midpoints, widths, serrationAmplitud
 	var t=0.0;
 	var i=0;
 	var p,lp, leftX,leftY, rightX, rightY, pLeftX, pLeftY, pRightX, pRightY;
-	for (t=0.0; t<1.0; t+= widths[0]/2048.0) { //
+	for (t=0.0; t<1.0; t+= widths[0]/4096.0) { //
 		lp = p;
 		pLeftX = leftX;
 		pLeftY = leftY;
@@ -567,7 +567,7 @@ function drawRiver(canvas, context, angles, midpoints, widths, serrationAmplitud
 			var d = Math.sqrt(dx*dx+dy*dy);
 			dx/=d;
 			dy/=d;
-			var randomD = rng()*0.2;
+			var randomD = rng()*0.3;
 			var leftX = p.x - dy*(5+randomD)* widths[0];
 			var leftY = p.y + dx*(5+randomD)* widths[0];
 			var rightX = p.x + dy*(5+randomD)* widths[0];
@@ -575,16 +575,14 @@ function drawRiver(canvas, context, angles, midpoints, widths, serrationAmplitud
 			
 			var grd = context.createLinearGradient(leftX, leftY, rightX, rightY);
 			grd.addColorStop(0, fillColor);
-			grd.addColorStop(0.3 + rng()*0.005, fillColorInside);
-			grd.addColorStop(0.7 - rng()*0.005, fillColorInside);
+			grd.addColorStop(0.3, fillColorInside);
+			grd.addColorStop(0.7, fillColorInside);
 			grd.addColorStop(1, fillColor);
 
 			context.fillStyle = grd;
 
 			context.beginPath();
-			//context.moveTo(lp.x, lp.y);
-			//context.lineTo(p.x, p.y);
-			context.strokeStyle = grd; //rgba(0, 0, 0, 1.0);
+			context.strokeStyle = grd;
 			context.lineWidth = 1;
 			context.moveTo(pLeftX, pLeftY);
 			context.lineTo(leftX, leftY);
@@ -596,8 +594,6 @@ function drawRiver(canvas, context, angles, midpoints, widths, serrationAmplitud
 			context.stroke();
 			
 			context.beginPath();
-			//context.moveTo(lp.x, lp.y);
-			//context.lineTo(p.x, p.y);
 			context.strokeStyle = rgba(0, 0, 0, 1.0);
 			context.lineWidth = 1;
 			context.moveTo(pLeftX, pLeftY);
