@@ -520,7 +520,7 @@ function drawRiver(canvas, context, angles, midpoints, widths, serrationAmplitud
 		var p = bezierCurve.calculateNewPoint(t);
 		context.beginPath();
 		context.ellipse(p.x, p.y, 5 * widths[0], 5 * widths[0], 0, 0, Math.PI * 2);
-		if (i % 8 == 0)
+		if (i % 4 == 0)
 			outColliderCircles.push({x:p.x, y:p.y, r:5 * widths[0]});
 		context.lineTo(p.x, p.y);
 		context.closePath();
@@ -532,12 +532,6 @@ function drawRiver(canvas, context, angles, midpoints, widths, serrationAmplitud
 	
 	context.fillStyle = rgba(255, 255, 255, 1.0);
 	context.strokeStyle = rgba(0, 0, 0, 1.0);
-
-	// context.lineWidth = 1;
-	// context.strokeStyle = rgba(0, 0, 255, 0.5);
-	// context.moveTo(x0, y0);
-	// context.lineTo(x1, y1);
-	// context.stroke();
 }
 
 function run(dt, forceRedraw) {
