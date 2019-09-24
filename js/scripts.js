@@ -326,11 +326,11 @@ function drawTreeRounded(
 		var gg = (rng() * 256.0)*colorRandomness;
 		var bb = (rng() * 256.0 - 164.0)*colorRandomness;
 		
-		var grd = context.createRadialGradient(centerX - sizeForStep/3, centerY - sizeForStep/3, sizeForStep/8, centerX - sizeForStep/3, centerY - sizeForStep/3, sizeForStep*1.1);
+		var grd = context.createRadialGradient(centerX - sizeForStep/3, centerY - sizeForStep/3, sizeForStep/8, centerX - sizeForStep/3, centerY - sizeForStep/3, sizeForStep*1.4);
 		grd.addColorStop(0, rgba(
-			r + (rEnd-r) * (((fillInnerStepsWithColor ? stepNo+1 : 2))/(steps+1)) + rr,
-			g + (gEnd-g) * (((fillInnerStepsWithColor ? stepNo+1 : 2))/(steps+1)) + gg,
-			b + (bEnd-b) * (((fillInnerStepsWithColor ? stepNo+1 : 2))/(steps+1)) + bb,
+			r + (rEnd-r) * (((fillInnerStepsWithColor ? stepNo+1 : steps+1))/(steps+1)) + rr,
+			g + (gEnd-g) * (((fillInnerStepsWithColor ? stepNo+1 : steps+1))/(steps+1)) + gg,
+			b + (bEnd-b) * (((fillInnerStepsWithColor ? stepNo+1 : steps+1))/(steps+1)) + bb,
 			treeColor
 		));
 		grd.addColorStop(1, rgba(
@@ -609,6 +609,17 @@ function drawRiver(canvas, context, angles, midpoints, widths, serrationAmplitud
 	
 	context.fillStyle = rgba(255, 255, 255, 1.0);
 	context.strokeStyle = rgba(0, 0, 0, 1.0);
+}
+
+function drawTwigs(canvas, context, x0, y0, size, angle, fillOpacity, rng) {
+	//TODO
+	
+	var x1 = x0 + Math.cos(angle) * size;
+	var y1 = y0 + Math.sin(angle) * size;
+	var x2 = y0 - Math.cos(angle) * size;
+	var y2 = y0 - Math.sin(angle) * size;
+	
+	
 }
 
 function run(dt, forceRedraw) {
