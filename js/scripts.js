@@ -483,7 +483,7 @@ function drawBackground(canvas, context, rng) {
     context.fillRect(0, 0, canvas.width, canvas.height);
 }
 
-function drawRiver(canvas, context, angles, midpoints, widths, serrationAmplitude, serrationFrequency, serrationRandomness, rng, outColliderCircles) {
+function drawRiver(canvas, context, angles, midpoints, widths, serrationAmplitude, serrationFrequency, serrationRandomness, rng, outColliderCircles, fillOpacity) {
 	// console.assert(angles.length >= 2 && angles.length <= 3);
 	// console.assert(midpoints.length <= 3);
 	// console.assert(widths.length = angles.length);
@@ -540,8 +540,8 @@ function drawRiver(canvas, context, angles, midpoints, widths, serrationAmplitud
 	var rr = rng()*16;
 	var gg = rng()*64;
 	var bb = 200+56*rng();
-	var fillColor = rgba(rr, gg, bb, 1.0);
-	var fillColorInside = rgba(rr*0.8, gg*0.8, bb*0.7, 1.0);
+	var fillColor = rgba(rr, gg, bb, fillOpacity);
+	var fillColorInside = rgba(rr*0.8, gg*0.8, bb*0.7, fillOpacity);
 	
 	context.fillStyle = fillColor;
 	//graph.drawCurveFromPoints(canvas, context, bezierCurve.drawingPoints);
@@ -667,7 +667,7 @@ function run(dt, forceRedraw) {
 		var midpoints = [{x:rng() * canvas.width, y:rng() * canvas.height}];
 		var widths = [Math.round(3*riverSize*(1+rng())), Math.round(3*riverSize*(1+rng()))];
 		
-		drawRiver(canvas, context, angles, midpoints, widths, serrationAmplitude, serrationFrequency, serrationRandomness, rng, listOfCircles);
+		drawRiver(canvas, context, angles, midpoints, widths, serrationAmplitude, serrationFrequency, serrationRandomness, rng, listOfCircles, treeColor);
 	}
 	
 	rng = createRNG(seed);
