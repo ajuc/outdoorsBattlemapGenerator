@@ -294,7 +294,8 @@ function drawTreeRounded(
 					serrationFrequencyMin, serrationFrequencyMax,
 					serrationRngFactorX, serrationRngFactorY,
 					colorRandomness, treeColor,
-					seed) {
+					seed,
+					fillInnerStepsWithColor) {
 	var rng = createRNG(seed);
 	var stepNo = 0.0;
 	var angle = 0.0;
@@ -304,10 +305,11 @@ function drawTreeRounded(
 	var r = 0;
 	var g = 90;
 	var b = 0;
-	var rEnd = 40;
-	var gEnd = 220;
-	var bEnd = 80;
+	var rEnd = 130;
+	var gEnd = 230;
+	var bEnd = 120;
 	var sizeForStep = 0;
+	var stepInited, lastDrawn;
 	
 	var phase, phaseShift, phaseMultiplier;
 	for (stepNo = 0; stepNo < steps; stepNo += 1) {
@@ -316,25 +318,25 @@ function drawTreeRounded(
 		
 		context.strokeStyle = rgba(0, 0, 0, 1);
 		context.lineWidth = 1;
-		serrationAmplitude = (serrationAmplitudeMin + (serrationAmplitudeMax - serrationAmplitudeMin) * (stepNo/steps));
+		serrationAmplitude = (serrationAmplitudeMin + (serrationAmplitudeMax - serrationAmplitudeMin) * (stepNo/steps)) * size/100;
 		serrationFrequency = (serrationFrequencyMin + (serrationFrequencyMax - serrationFrequencyMin) * (stepNo/steps));
-		sizeForStep = (size * (1 + steps-stepNo + 0.2 * rng())/steps);
+		sizeForStep = size * (steps-stepNo + 0.25 * rng())/steps;
 
 		var rr = (rng() * 256.0 - 64.0)*colorRandomness;
-		var gg = (rng() * 256.0 - 32.0)*colorRandomness;
-		var bb = (rng() * 256.0 - 224.0)*colorRandomness;
+		var gg = (rng() * 256.0)*colorRandomness;
+		var bb = (rng() * 256.0 - 164.0)*colorRandomness;
 		
-		var grd = context.createRadialGradient(centerX - sizeForStep/3, centerY - sizeForStep/3, sizeForStep/8, centerX - sizeForStep/3, centerY - sizeForStep/3, sizeForStep*1.5);
+		var grd = context.createRadialGradient(centerX - sizeForStep/3, centerY - sizeForStep/3, sizeForStep/8, centerX - sizeForStep/3, centerY - sizeForStep/3, sizeForStep*1.1);
 		grd.addColorStop(0, rgba(
-			r + (rEnd-r) * ((stepNo+1)/(steps+1)) + rr,
-			g + (gEnd-g) * ((stepNo+1)/(steps+1)) + gg,
-			b + (bEnd-b) * ((stepNo+1)/(steps+1)) + bb,
+			r + (rEnd-r) * (((fillInnerStepsWithColor ? stepNo+1 : 2))/(steps+1)) + rr,
+			g + (gEnd-g) * (((fillInnerStepsWithColor ? stepNo+1 : 2))/(steps+1)) + gg,
+			b + (bEnd-b) * (((fillInnerStepsWithColor ? stepNo+1 : 2))/(steps+1)) + bb,
 			treeColor
 		));
 		grd.addColorStop(1, rgba(
-			r + (rEnd-r) * (stepNo/(steps+1)) + rr,
-			g + (gEnd-g) * (stepNo/(steps+1)) + gg,
-			b + (bEnd-b) * (stepNo/(steps+1)) + bb,
+			r + (rEnd-r) * ((fillInnerStepsWithColor ? stepNo : 0)/(steps+1)) + rr,
+			g + (gEnd-g) * ((fillInnerStepsWithColor ? stepNo : 0)/(steps+1)) + gg,
+			b + (bEnd-b) * ((fillInnerStepsWithColor ? stepNo : 0)/(steps+1)) + bb,
 			treeColor * 0.9
 		));
 		// Fill with gradient
@@ -344,8 +346,13 @@ function drawTreeRounded(
 		context.beginPath();
 		phaseShift = rng();
 		phaseMultiplier = 4.0 + 3*rng();
+		innerPhaseDivider = 90+90*rng();
+		innerPhaseModuler = 1.0+innerPhaseDivider/3*rng();
+		innerPhaseShift = 359*rng();
+		stepInited = false;
+		lastDrawn = false;
 		for (angle = 0; angle < 360.0; angle += angleStep) {
-			radianAngle = (seed + angle) * Math.PI / 180.0;
+			radianAngle = ((seed + angle) % 360) * Math.PI / 180.0;
 			phase = 0.2 * (
 				Math.sin(phaseMultiplier * (radianAngle + phaseShift*2*Math.PI))
 				+ 0.5 * Math.sin(phaseMultiplier * (radianAngle*2.1 + phaseShift*3.2*Math.PI))
@@ -356,13 +363,31 @@ function drawTreeRounded(
 			x = centerX + localSize * Math.cos(radianAngle);
 			y = centerY + localSize * Math.sin(radianAngle);
 			if(angle > 0) {
-				context.lineTo(x, y);
-			} else {
-				context.moveTo(x, y);
-			}
+				if (stepNo == 0 || fillInnerStepsWithColor || (Math.abs(Math.round((angle + innerPhaseShift) % Math.round(innerPhaseDivider))) < 30 + innerPhaseModuler)) {
+					if (!stepInited) {
+						context.moveTo(x, y);
+						lastDrawn = false;
+					} else {
+						if (lastDrawn) {
+							context.lineTo(x, y);
+						}
+						lastDrawn = true;
+					}
+					stepInited = true;
+				} else {
+					lastDrawn = false;
+					context.moveTo(x, y);
+				}
+			} 
+			// else {
+				// context.moveTo(x, y);
+			// }
 		}
-		context.closePath();
-		context.fill();
+		//context.closePath();
+		if (stepNo == 0 || fillInnerStepsWithColor) {
+			context.closePath()
+			context.fill();
+		}
 		context.stroke();
 	}
 }
@@ -539,7 +564,7 @@ function run(dt, forceRedraw) {
 	
 	if (!document.redrawNeeded && !forceRedraw)
 		return;
-	
+			
 	var canvas = document.getElementById("canvas");
 	var context = canvas.getContext("2d");
 	
@@ -610,25 +635,27 @@ function run(dt, forceRedraw) {
 		y0 = rng() * canvas.height;
 		r0 = treeSize * (1 + rng());
 		if (!collidesWithPreviousTrees(listOfCircles, x0, y0, r0)) {
-			if (rng() < leavedTreeProportion) {
+			if (rng() > leavedTreeProportion) {
 				var ignored = rng();
 				drawTreeRounded(
-					context, x0, y0, r0, centerRandomness, 1, 180,
+					context, x0, y0, r0*2, centerRandomness, Math.round(treeSteps*(0.75+rng())), 120,
 					5*serrationAmplitude, 2*serrationAmplitude,
 					7*serrationFrequency, 4*serrationFrequency,
 					0.5*serrationRandomness, 0.14*serrationRandomness,
 					colorRandomness, treeColor,
-					rng()
+					rng(),
+					true
 				);
-				listOfCircles.push({x:x0, y:y0, r:r0*2*treeSeparation});
+				listOfCircles.push({x:x0, y:y0, r:r0*4*treeSeparation});
 			} else {
 				drawTreeRounded(
-					context, x0, y0, r0*2, centerRandomness, Math.round(treeSteps*(0.75+rng())), 180,
+					context, x0, y0, r0*2, centerRandomness, Math.round(treeSteps*(0.75+rng())), 120,
 					5*serrationAmplitude, 2*serrationAmplitude,
 					9*serrationFrequency, 4*serrationFrequency,
 					0.6*serrationRandomness, 0.24*serrationRandomness,
 					colorRandomness, treeColor,
-					rng()
+					rng(),
+					false
 				);
 				listOfCircles.push({x:x0, y:y0, r:r0*4*treeSeparation});
 			}
