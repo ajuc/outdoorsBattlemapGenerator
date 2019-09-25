@@ -756,7 +756,7 @@ function run(dt, forceRedraw) {
 		r0 = treeSize * (1 + rng());
 		if (!collidesWithPreviousTrees(listOfCircles, x0, y0, r0)) {
 			if (rng() > leavedTreeProportion) {
-				var ignored = rng();
+				//var ignored = rng();
 				drawTreeRounded(
 					context, x0, y0, r0*2, centerRandomness, Math.round(treeSteps*(0.75+rng())), 120,
 					5*serrationAmplitude, 2*serrationAmplitude,
