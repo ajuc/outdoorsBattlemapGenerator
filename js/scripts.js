@@ -54,6 +54,7 @@ function saveParametersToLocalStorage() {
 	save("seed");
 	save("treeDensity");
 	save("stoneDensity");
+	save("twigsDensity");
 	save("riverSize");
 	save("centerRandomness");
 	save("leavedTreeProportion");
@@ -87,6 +88,7 @@ function loadParametersFromLocalStorage() {
 	load("seed");
 	load("treeDensity");
 	load("stoneDensity");
+	load("twigsDensity");
 	load("riverSize");
 	load("centerRandomness");
 	load("leavedTreeProportion");
@@ -150,6 +152,7 @@ function addListeners() {
 	addListener("seed");
 	addListener("treeDensity");
 	addListener("stoneDensity");
+	addListener("twigsDensity");
 	addListener("riverSize");
 	addListener("centerRandomness");
 	addListener("leavedTreeProportion");
@@ -182,6 +185,7 @@ function resetParameters() {
 	document.getElementById("seed").value = 1;
 	document.getElementById("treeDensity").value = 40;
 	document.getElementById("stoneDensity").value = 40;
+	document.getElementById("twigsDensity").value = 40;
 	document.getElementById("riverSize").value = 2;
 	document.getElementById("centerRandomness").value = 30;
 	document.getElementById("leavedTreeProportion").value = 95;
@@ -212,6 +216,7 @@ function randomizeParameters() {
 	document.getElementById("seed").value = Math.round(Math.random() * 65536);
 	document.getElementById("treeDensity").value = Math.round(Math.random() * 100);
 	document.getElementById("stoneDensity").value = Math.round(Math.random() * 20 * Math.random() * 5);
+	document.getElementById("twigsDensity").value = Math.round(Math.random() * 20 * Math.random() * 5);
 	document.getElementById("riverSize").value = Math.random() > 0.5 ? Math.round(Math.random() * 10) : 0;
 	document.getElementById("centerRandomness").value = Math.round(30);
 	document.getElementById("leavedTreeProportion").value = Math.round(Math.random() * 100);
@@ -611,15 +616,48 @@ function drawRiver(canvas, context, angles, midpoints, widths, serrationAmplitud
 	context.strokeStyle = rgba(0, 0, 0, 1.0);
 }
 
-function drawTwigs(canvas, context, x0, y0, size, angle, fillOpacity, rng) {
-	//TODO
+function drawTwigs(canvas, context, x0, y0, len, width, angle, fillOpacity, rng) {
+	var x1 = x0 + Math.cos(angle) * len;
+	var y1 = y0 + Math.sin(angle) * len;
+	var x2 = x0 - Math.cos(angle) * len;
+	var y2 = y0 - Math.sin(angle) * len;
+	var leftDx  = (y2-y1);
+	var leftDy  = -(x2-x1);
+	var rightDx = -(y2-y1);
+	var rightDy = (x2-x1);
+	var D = Math.sqrt(leftDx*leftDx + leftDy*leftDy);
 	
-	var x1 = x0 + Math.cos(angle) * size;
-	var y1 = y0 + Math.sin(angle) * size;
-	var x2 = y0 - Math.cos(angle) * size;
-	var y2 = y0 - Math.sin(angle) * size;
+	leftDx *= width/D;
+	leftDy *= width/D;
+	rightDx *= width/D;
+	rightDy *= width/D;
 	
+	var rr = 128+rng()*32;
+	var gg = 2+rng()*16;
+	var bb = 2+rng()*16;
+	var fillColorInside = rgba(rr, gg, bb, fillOpacity);
+	var fillColor = rgba(rr*0.4, gg*0.4, bb*0.4, fillOpacity);
 	
+	var grd = context.createLinearGradient(x0 + leftDx, y0 + leftDy, x0 + rightDx, y0 +rightDy);
+	grd.addColorStop(0, fillColor);
+	grd.addColorStop(0.3, fillColorInside);
+	grd.addColorStop(0.7, fillColorInside);
+	grd.addColorStop(1, fillColor);
+
+	context.fillStyle = grd;			
+	context.strokeStyle = rgba(120, 0, 0, 1);
+	
+	context.beginPath();
+	
+	context.moveTo(x1 + leftDx, y1 + leftDy);
+	context.lineTo(x2 + leftDx, y2 + leftDy);
+	context.lineTo(x2 + rightDx, y2 + rightDy);
+	context.lineTo(x1 + rightDx, y1 + rightDy);
+	context.lineTo(x1 + leftDx, y1 + leftDy);
+	
+	context.closePath();
+	context.stroke();
+	context.fill();
 }
 
 function run(dt, forceRedraw) {
@@ -649,6 +687,7 @@ function run(dt, forceRedraw) {
 
 	var howMuchTrees = (canvas.width/130 * canvas.height/130) * document.getElementById("treeDensity").value * 0.05;
 	var howMuchStones = (canvas.width/130 * canvas.height/130) * document.getElementById("stoneDensity").value * 0.1;
+	var howMuchTwigs = (canvas.width/130 * canvas.height/130) * document.getElementById("twigsDensity").value * 0.1;
 	var riverSize = Math.round(document.getElementById("riverSize").value);
 
 	var centerRandomness = 15.0 * document.getElementById("centerRandomness").value * 0.01;
@@ -698,6 +737,18 @@ function run(dt, forceRedraw) {
 		listOfCircles.push({x:x0, y:y0, r:r0});
 	}
 	
+	rng = createRNG(seed);
+	for (i=0; i<howMuchTwigs * 0.125; i++) {
+		let ignore = rng();
+		let yt = rng() * canvas.height;
+		let len = 10 + rng() * 16;
+		let width = 1 + rng() * 3;
+		
+		let xt = rng() * canvas.width;
+		if (!collidesWithPreviousTrees(listOfCircles, xt, yt, 5))
+			drawTwigs(canvas, context, xt, yt, len, width, rng()*Math.PI*2, treeColor, rng)
+	}
+
 	rng = createRNG(seed);
 	for (i=0; i<howMuchTrees; i++) {
 		x0 = rng() * canvas.width;
