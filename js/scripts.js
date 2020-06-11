@@ -76,7 +76,7 @@ function getParameterNames() {
 function getParameterDefaultValue(name) {
 	const defaults = {
 		"gridType": -1,
-		"gridSize": 20,
+		"gridSize": 64,
 		"gridOpacity": 30,
 		"width": 1920,
 		"height": 1080,
@@ -87,7 +87,7 @@ function getParameterDefaultValue(name) {
 		"riverSize": 2,
 		"centerRandomness": 30,
 		"leavedTreeProportion": 95,
-		"treeSize": 35,
+		"treeSize": 50,
 		"treeColor": 120,
 		"treeSeparation": 60,
 		"serrationAmplitude": 130,
@@ -116,7 +116,7 @@ function getParameterRandomizeFunction(name) {
 		"riverSize": function () { return Math.random() > 0.5 ? Math.round(Math.random() * 10) : 0; },
 		"centerRandomness": function () { return Math.round(30); },
 		"leavedTreeProportion": function () { return Math.round(Math.random() * 100); },
-		"treeSize": function () { return Math.round(20) + Math.round(Math.random() * 20); },
+		"treeSize": function () { return Math.round(30) + Math.round(Math.random() * 40); },
 		"treeColor": function () { return Math.round(Math.random() * 65536); },
 		"treeSeparation": function () { return Math.round(80 + Math.random() * 20); },
 		"serrationAmplitude": function () { return Math.round(80 + Math.random() * 40); },
@@ -159,6 +159,43 @@ function backgroundChanged(backgroundNo) {
 	save("backgroundNo");
 	document.image.src = "gfx/pattern_"+backgroundNo+".png";
 	//document.image.crossOrigin = "Anonymous";
+}
+
+function createPolyFromCircle(origin, radius) {
+	const sides = 16;
+	var ox = origin[0];
+	var oy = origin[1];
+    var res  = new PolyDefault();
+	var angle = 0.0;
+	var angleStep = 2.0 * Math.PI / sides;
+    for(var i=0 ; i < sides ; i++) {    
+        res.addPoint(
+			new Point(
+				ox + radius * Math.cos(angle),
+				oy + radius * Math.sin(angle)
+			)
+		);
+		angle += angleStep;
+    }
+    return res;
+}
+
+function createPolyFromPoints(points) {
+    var res  = new PolyDefault();
+    for(var i=0 ; i < points.length ; i++) {    
+        res.addPoint(new Point(points[i][0],points[i][1]));
+    }
+    return res;
+}
+function getPolygonVertices(poly) {
+	var vertices=[];
+	var numPoints = poly.getNumPoints();
+	var i;
+	
+	for(i=0;i<numPoints;i++) {
+		vertices.push([poly.getX(i) , poly.getY(i)]);
+	}
+	return vertices;
 }
 
 function createExportTemplate(mapOriginInTiles, mapSizeInTiles, pixelsPerTile) {
@@ -484,13 +521,17 @@ function createRNG(seed) {
 	}
 }
 
-function collidesWithPreviousTrees(list, x, y, r) {
-	var i;
+function collidesWithPreviousTrees(lists, x, y, r) {
+	var i, j;
+	var list;
 	var collides;
-	for (i=0; i<list.length; i++) {
-		collides = (list[i].x - x)*(list[i].x - x) + (list[i].y - y)*(list[i].y - y) < (list[i].r + r)*(list[i].r + r);
-		if (collides)
-			return true;
+	for (j=0; j<lists.length; j++) {	
+		list = lists[j];
+		for (i=0; i<list.length; i++) {
+			collides = (list[i].x - x)*(list[i].x - x) + (list[i].y - y)*(list[i].y - y) < (list[i].r + r)*(list[i].r + r);
+			if (collides)
+				return true;
+		}
 	}
 	return false;
 }
@@ -744,7 +785,11 @@ function run(dt, forceRedraw) {
 	var stepsNo;
 	//rng();
 	var i=0;
-	var listOfCircles = [];
+	
+	var listOfCirclesForRiver = [];
+	var listOfCirclesForClearings = [];
+	var listOfCirclesForTrees = [];
+	
 	var x0, y0, r0;
 	
 	if (riverSize > 0) {
@@ -756,7 +801,7 @@ function run(dt, forceRedraw) {
 		var midpoints = [{x:rng() * canvas.width, y:rng() * canvas.height}];
 		var widths = [Math.round(3*riverSize*(1+rng())), Math.round(3*riverSize*(1+rng()))];
 
-		drawRiver(canvas, context, angles, midpoints, widths, serrationAmplitude, serrationFrequency, serrationRandomness, rng, listOfCircles, treeColor, 0, 0, 200);
+		drawRiver(canvas, context, angles, midpoints, widths, serrationAmplitude, serrationFrequency, serrationRandomness, rng, listOfCirclesForRiver, treeColor, 0, 0, 200);
 	}
 	
 	rng = createRNG(seed);
@@ -764,7 +809,7 @@ function run(dt, forceRedraw) {
 		var xs = rng() * canvas.width;
 		var ys = rng() * canvas.height;
 		var rs = 5 + rng() * 9;
-		if (!collidesWithPreviousTrees(listOfCircles, xs, ys, 1)) {
+		if (!collidesWithPreviousTrees([listOfCirclesForRiver], xs, ys, 1)) {
 			drawStone(canvas, context, xs, ys, rs, rng, colorRandomness, treeColor);
 		} else {
 			callRngNTimesToBalancePaths(4);
@@ -776,7 +821,7 @@ function run(dt, forceRedraw) {
 		x0 = rng() * canvas.width;
 		y0 = rng() * canvas.height;
 		r0 = canvas.height * 0.4 * 0.5*(1 + rng()) * clearingSize;
-		listOfCircles.push({x:x0, y:y0, r:r0});
+		listOfCirclesForClearings.push({x:x0, y:y0, r:r0});
 	}
 	
 	rng = createRNG(seed);
@@ -787,7 +832,7 @@ function run(dt, forceRedraw) {
 		let width = 1 + rng() * 3;
 		
 		let xt = rng() * canvas.width;
-		if (!collidesWithPreviousTrees(listOfCircles, xt, yt, 5)) {
+		if (!collidesWithPreviousTrees([listOfCirclesForRiver, listOfCirclesForClearings], xt, yt, 5)) {
 			drawTwigs(canvas, context, xt, yt, len, width, rng()*Math.PI*2, treeColor, rng);
 		} else {
 			callRngNTimesToBalancePaths(4);
@@ -800,7 +845,7 @@ function run(dt, forceRedraw) {
 		y0 = rng() * canvas.height;
 		r0 = treeSize * (1 + rng());
 		stepsNo = Math.round(treeSteps*(0.75+rng()));
-		if (!collidesWithPreviousTrees(listOfCircles, x0, y0, r0)) {
+		if (!collidesWithPreviousTrees([listOfCirclesForRiver, listOfCirclesForClearings, listOfCirclesForTrees], x0, y0, r0)) {
 			if (rng() > leavedTreeProportion) {
 				drawTreeRounded(
 					context, x0, y0, r0*2, centerRandomness, stepsNo, 120,
@@ -811,7 +856,7 @@ function run(dt, forceRedraw) {
 					rng,
 					true
 				);
-				listOfCircles.push({x:x0, y:y0, r:r0*4*treeSeparation});
+				listOfCirclesForTrees.push({x:x0, y:y0, r:r0*4*treeSeparation});
 			} else {
 				drawTreeRounded(
 					context, x0, y0, r0*2, centerRandomness, stepsNo, 120,
@@ -822,7 +867,7 @@ function run(dt, forceRedraw) {
 					rng,
 					false
 				);
-				listOfCircles.push({x:x0, y:y0, r:r0*4*treeSeparation});
+				listOfCirclesForTrees.push({x:x0, y:y0, r:r0*4*treeSeparation});
 			}
 		} else {
 			callRngNTimesToBalancePaths(6);
