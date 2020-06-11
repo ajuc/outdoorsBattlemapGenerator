@@ -161,10 +161,10 @@ function backgroundChanged(backgroundNo) {
 	//document.image.crossOrigin = "Anonymous";
 }
 
-function createPolyFromCircle(origin, radius) {
+function createPolygonFromCircle(x, y, radius) {
 	const sides = 16;
-	var ox = origin[0];
-	var oy = origin[1];
+	var ox = x;
+	var oy = y;
     var res  = new PolyDefault();
 	var angle = 0.0;
 	var angleStep = 2.0 * Math.PI / sides;
@@ -180,7 +180,7 @@ function createPolyFromCircle(origin, radius) {
     return res;
 }
 
-function createPolyFromPoints(points) {
+function createPolygonFromPoints(points) {
     var res  = new PolyDefault();
     for(var i=0 ; i < points.length ; i++) {    
         res.addPoint(new Point(points[i][0],points[i][1]));
@@ -196,6 +196,30 @@ function getPolygonVertices(poly) {
 		vertices.push([poly.getX(i) , poly.getY(i)]);
 	}
 	return vertices;
+}
+
+//createPolygonFromPoints(points)
+
+function collidersAfterAddingCircle(listOfColliders, x, y, r) {
+	var polygon = createPolygonFromCircle(x, y, r);
+	return collidersAfterAddingPolygon(listOfColliders, polygon);
+}
+
+function collidersAfterAddingPolygon(listOfColliders, polygon) {
+	var i;
+	var intersection;
+	var nonintersectingPolygons = [];
+	var intersectingPolygon = polygon;
+	for (i=0; i<listOfColiders.length; i++) {
+		intersection = listOfColiders[i].intersection(polygon);
+		if (intersection.area() <= 0.1) {
+			nonintersectingPolygons.push(listOfColiders[i]);
+		} else {
+			intersectingPolygon = intersectingPolygon.union(listOfColiders[i]);
+		}
+	}
+	var result = nonintersectingPolygons.push(intersectingPolygon);
+	return result;
 }
 
 function createExportTemplate(mapOriginInTiles, mapSizeInTiles, pixelsPerTile) {
@@ -521,7 +545,7 @@ function createRNG(seed) {
 	}
 }
 
-function collidesWithPreviousTrees(lists, x, y, r) {
+function collidesWithPrevious(lists, x, y, r) {
 	var i, j;
 	var list;
 	var collides;
@@ -809,7 +833,7 @@ function run(dt, forceRedraw) {
 		var xs = rng() * canvas.width;
 		var ys = rng() * canvas.height;
 		var rs = 5 + rng() * 9;
-		if (!collidesWithPreviousTrees([listOfCirclesForRiver], xs, ys, 1)) {
+		if (!collidesWithPrevious([listOfCirclesForRiver], xs, ys, 1)) {
 			drawStone(canvas, context, xs, ys, rs, rng, colorRandomness, treeColor);
 		} else {
 			callRngNTimesToBalancePaths(4);
@@ -832,7 +856,7 @@ function run(dt, forceRedraw) {
 		let width = 1 + rng() * 3;
 		
 		let xt = rng() * canvas.width;
-		if (!collidesWithPreviousTrees([listOfCirclesForRiver, listOfCirclesForClearings], xt, yt, 5)) {
+		if (!collidesWithPrevious([listOfCirclesForRiver, listOfCirclesForClearings], xt, yt, 5)) {
 			drawTwigs(canvas, context, xt, yt, len, width, rng()*Math.PI*2, treeColor, rng);
 		} else {
 			callRngNTimesToBalancePaths(4);
@@ -845,7 +869,7 @@ function run(dt, forceRedraw) {
 		y0 = rng() * canvas.height;
 		r0 = treeSize * (1 + rng());
 		stepsNo = Math.round(treeSteps*(0.75+rng()));
-		if (!collidesWithPreviousTrees([listOfCirclesForRiver, listOfCirclesForClearings, listOfCirclesForTrees], x0, y0, r0)) {
+		if (!collidesWithPrevious([listOfCirclesForRiver, listOfCirclesForClearings, listOfCirclesForTrees], x0, y0, r0)) {
 			if (rng() > leavedTreeProportion) {
 				drawTreeRounded(
 					context, x0, y0, r0*2, centerRandomness, stepsNo, 120,
