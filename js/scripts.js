@@ -1,3 +1,26 @@
+var PolyDefault = gpcas.geometry.PolyDefault;
+var ArrayList = gpcas.util.ArrayList;
+var PolySimple = gpcas.geometry.PolySimple;
+var Clip = gpcas.geometry.Clip;
+var OperationType = gpcas.geometry.OperationType;
+var LmtTable = gpcas.geometry.LmtTable;
+var ScanBeamTreeEntries = gpcas.geometry.ScanBeamTreeEntries;
+var EdgeTable = gpcas.geometry.EdgeTable;
+var EdgeNode = gpcas.geometry.EdgeNode;
+var ScanBeamTree = gpcas.geometry.ScanBeamTree;
+var Rectangle = gpcas.geometry.Rectangle;
+var BundleState = gpcas.geometry.BundleState;
+var LmtNode = gpcas.geometry.LmtNode;
+var TopPolygonNode = gpcas.geometry.TopPolygonNode;
+var AetTree = gpcas.geometry.AetTree;
+var HState = gpcas.geometry.HState;
+var VertexType = gpcas.geometry.VertexType;
+var VertexNode = gpcas.geometry.VertexNode;
+var PolygonNode = gpcas.geometry.PolygonNode;
+var ItNodeTable = gpcas.geometry.ItNodeTable;
+var StNode = gpcas.geometry.StNode;
+var ItNode = gpcas.geometry.ItNode;
+
 function init()
 {
 	document.image = new Image();
@@ -69,7 +92,8 @@ function getParameterNames() {
 		"clearings",
 		"clearingSize",
 		"treeSteps",
-		"backgroundNo"
+		"backgroundNo",
+		"showColliders"
 	];
 }
 
@@ -97,7 +121,8 @@ function getParameterDefaultValue(name) {
 		"clearings": 9,
 		"clearingSize": 30,
 		"treeSteps": 3,
-		"backgroundNo": 3
+		"backgroundNo": 3,
+		"showColliders": 0
 	};
 	return defaults[name];
 }
@@ -126,7 +151,8 @@ function getParameterRandomizeFunction(name) {
 		"clearings": function () { return Math.round(3 + Math.random() * 10); },
 		"clearingSize": function () { return Math.round(30 + Math.random() * 20); },
 		"treeSteps": function () { return Math.round(3 + Math.random() * 2); },
-		"backgroundNo": null
+		"backgroundNo": null,
+		"showColliders": null
 	};
 	return functions[name];
 }
@@ -162,7 +188,7 @@ function backgroundChanged(backgroundNo) {
 }
 
 function createPolygonFromCircle(x, y, radius) {
-	const sides = 16;
+	const sides = 8;
 	var ox = x;
 	var oy = y;
     var res  = new PolyDefault();
@@ -170,7 +196,7 @@ function createPolygonFromCircle(x, y, radius) {
 	var angleStep = 2.0 * Math.PI / sides;
     for(var i=0 ; i < sides ; i++) {    
         res.addPoint(
-			new Point(
+			new PointF(
 				ox + radius * Math.cos(angle),
 				oy + radius * Math.sin(angle)
 			)
@@ -183,7 +209,7 @@ function createPolygonFromCircle(x, y, radius) {
 function createPolygonFromPoints(points) {
     var res  = new PolyDefault();
     for(var i=0 ; i < points.length ; i++) {    
-        res.addPoint(new Point(points[i][0],points[i][1]));
+        res.addPoint(new PointF(points[i][0],points[i][1]));
     }
     return res;
 }
@@ -198,28 +224,30 @@ function getPolygonVertices(poly) {
 	return vertices;
 }
 
-//createPolygonFromPoints(points)
-
-function collidersAfterAddingCircle(listOfColliders, x, y, r) {
+function addCircleToListOfColliders(listOfColliders, x, y, r) {
 	var polygon = createPolygonFromCircle(x, y, r);
-	return collidersAfterAddingPolygon(listOfColliders, polygon);
+	addPolygonToListOfColliders(listOfColliders, polygon);
 }
 
-function collidersAfterAddingPolygon(listOfColliders, polygon) {
+function addPolygonToListOfColliders(listOfColliders, polygon) {
 	var i;
 	var intersection;
 	var nonintersectingPolygons = [];
 	var intersectingPolygon = polygon;
-	for (i=0; i<listOfColiders.length; i++) {
-		intersection = listOfColiders[i].intersection(polygon);
-		if (intersection.area() <= 0.1) {
-			nonintersectingPolygons.push(listOfColiders[i]);
+	for (i=0; i<listOfColliders.length; i++) {
+		intersection = intersectingPolygon.intersection(listOfColliders[i]);
+		if (intersection.getArea() <= 0.01) {
+			nonintersectingPolygons.push(listOfColliders[i]);
 		} else {
-			intersectingPolygon = intersectingPolygon.union(listOfColiders[i]);
+			intersectingPolygon = intersectingPolygon.union(listOfColliders[i]);
 		}
 	}
-	var result = nonintersectingPolygons.push(intersectingPolygon);
-	return result;
+	
+	listOfColliders.length = 0;
+	for (var el of nonintersectingPolygons) {
+		listOfColliders.push(el);
+	}
+	listOfColliders.push(intersectingPolygon);
 }
 
 function createExportTemplate(mapOriginInTiles, mapSizeInTiles, pixelsPerTile) {
@@ -449,13 +477,14 @@ function drawTreeRounded(
 		innerPhaseShift = 359*rng();
 		stepInited = false;
 		lastDrawn = false;
+		var localFrequencyModifier = rng()*0.5-1.0;
 		for (angle = 0; angle < 360.0; angle += angleStep) {
 			radianAngle = ((seed + angle) % 360) * Math.PI / 180.0;
 			phase = 0.2 * (
 				Math.sin(phaseMultiplier * (radianAngle + phaseShift*2*Math.PI))
 				+ 0.5 * Math.sin(phaseMultiplier * (radianAngle*2.1 + phaseShift*3.2*Math.PI))
 			);
-			localSize = sizeForStep + serrationAmplitude * roundedSaw(serrationFrequency * (radianAngle + phase*serrationRngFactorX) + rng() * serrationRngFactorY);
+			localSize = sizeForStep + serrationAmplitude * roundedSaw((serrationFrequency + localFrequencyModifier) * (radianAngle + phase*serrationRngFactorX) + rng() * serrationRngFactorY);
 			lastX = x;
 			lastY = y;
 			x = centerX + localSize * Math.cos(radianAngle);
@@ -537,12 +566,23 @@ function drawHexGrid(canvas, context, radius, gridOpacity) {
 	context.stroke();
 }
 
-function createRNG(seed) {
-	var rngSeed = seed;
+/* function createRNG(seed) {
+	var state = seed;
     return function () {
-		var x = Math.sin(rngSeed++) * 10000;
-		return x - Math.floor(x);
+		state = (1103515245.0 * state + 12345.0) % 0x80000000;
+		return state - Math.floor(state);
 	}
+} */
+function createRNG(seed) {
+  var modulus = 2147483648;
+  var a = 1103515245;
+  var c = 12345;
+
+  var state = seed || 3;
+  return function() {
+    state = (a * state + c) % modulus;
+    return state/modulus;
+  };
 }
 
 function collidesWithPrevious(lists, x, y, r) {
@@ -555,6 +595,24 @@ function collidesWithPrevious(lists, x, y, r) {
 			collides = (list[i].x - x)*(list[i].x - x) + (list[i].y - y)*(list[i].y - y) < (list[i].r + r)*(list[i].r + r);
 			if (collides)
 				return true;
+		}
+	}
+	return false;
+}
+
+function collidesWithPrevious(lists, x, y, r) {
+	var i, j;
+	var list;
+	var intersection;
+	var collides;
+	var polygon = createPolygonFromCircle(x, y, r);
+	for (j=0; j<lists.length; j++) {	
+		list = lists[j];
+		for (i=0; i<list.length; i++) {
+			intersection = polygon.intersection(list[i]);
+			if (intersection.getArea() > 0.01) {
+				return true;
+			}
 		}
 	}
 	return false;
@@ -585,7 +643,20 @@ function drawBackground(canvas, context, rng) {
     context.fillRect(0, 0, canvas.width, canvas.height);
 }
 
-function drawRiver(canvas, context, angles, midpoints, widths, serrationAmplitude, serrationFrequency, serrationRandomness, rng, outColliderCircles, fillOpacity, r, g, b) {
+function drawPolygon(canvas, context, polygon) {
+	var points = getPolygonVertices(polygon);
+	context.beginPath();
+	context.moveTo(points[points.length-1][0], points[points.length-1][1]);
+	context.lineWidth = 2;
+	context.strokeStyle = rgba(1, 0, 0, 1.0);
+	for (var point of points) {
+		context.lineTo(point[0], point[1]);
+	}
+	context.closePath();
+	context.stroke();
+}
+
+function drawRiver(canvas, context, angles, midpoints, widths, serrationAmplitude, serrationFrequency, serrationRandomness, rng, outListOfColliders, fillOpacity, r, g, b) {
 	// console.assert(angles.length >= 2 && angles.length <= 3);
 	// console.assert(midpoints.length <= 3);
 	// console.assert(widths.length = angles.length);
@@ -603,6 +674,9 @@ function drawRiver(canvas, context, angles, midpoints, widths, serrationAmplitud
 	var pointsOnInnerRingIndex = 0;
 	var points = [];
 	var pointsIndex = 0;
+	var rightPointsForColliders = [];
+	var leftPointsForCollidersReverseOrder = [];
+	
 	
 	for (angleIndex = 0; angleIndex < angles.length; angleIndex++) {
 		pointsOnOuterRing.push({
@@ -659,8 +733,9 @@ function drawRiver(canvas, context, angles, midpoints, widths, serrationAmplitud
 		
 		p = bezierCurve.calculateNewPoint(t);
 		
-		outColliderCircles.push({x:p.x, y:p.y, r:5 * widths[0]});
-		
+		//outListOfColliders.push({x:p.x, y:p.y, r:5 * widths[0]});
+		//addCircleToListOfColliders(outListOfColliders, p.x, p.y, 5 * widths[0]);
+				
 		if (t === 0.0) {
 			context.moveTo(p.x, p.y);
 		} else {
@@ -674,6 +749,14 @@ function drawRiver(canvas, context, angles, midpoints, widths, serrationAmplitud
 			var leftY = p.y + dx*(5+randomD)* widths[0];
 			var rightX = p.x + dy*(5+randomD)* widths[0];
 			var rightY = p.y - dx*(5+randomD)* widths[0];
+			
+			if (i % 5 == 0) {
+				rightPointsForColliders.push([pLeftX, pLeftY]);
+				rightPointsForColliders.push([leftX, leftY]);
+				leftPointsForCollidersReverseOrder.unshift([pRightX, pRightY]);
+				leftPointsForCollidersReverseOrder.unshift([rightX, rightY]);
+			}
+			
 			
 			var grd = context.createLinearGradient(leftX, leftY, rightX, rightY);
 			grd.addColorStop(0, fillColor);
@@ -709,6 +792,13 @@ function drawRiver(canvas, context, angles, midpoints, widths, serrationAmplitud
 	}
 	context.lineWidth = 1;
 	
+	addPolygonToListOfColliders(
+		outListOfColliders,
+		createPolygonFromPoints(
+			rightPointsForColliders.concat(leftPointsForCollidersReverseOrder)
+		)
+	);
+			
 	context.fillStyle = rgba(255, 255, 255, 1.0);
 	context.strokeStyle = rgba(0, 0, 0, 1.0);
 }
@@ -806,7 +896,8 @@ function run(dt, forceRedraw) {
 	var clearings = document.getElementById("clearings").value;
 	var clearingSize = document.getElementById("clearingSize").value * 0.01;
 	var treeSteps = document.getElementById("treeSteps").value;
-	var stepsNo;
+	var showColliders = document.getElementById("showColliders").value;
+	var stepsNo,angleSteps;
 	//rng();
 	var i=0;
 	
@@ -845,7 +936,8 @@ function run(dt, forceRedraw) {
 		x0 = rng() * canvas.width;
 		y0 = rng() * canvas.height;
 		r0 = canvas.height * 0.4 * 0.5*(1 + rng()) * clearingSize;
-		listOfCirclesForClearings.push({x:x0, y:y0, r:r0});
+		//listOfCirclesForClearings.push({x:x0, y:y0, r:r0});
+		addCircleToListOfColliders(listOfCirclesForClearings, x0, y0, r0);
 	}
 	
 	rng = createRNG(seed);
@@ -864,15 +956,27 @@ function run(dt, forceRedraw) {
 	}
 
 	rng = createRNG(seed);
+	var treePositions = [];
 	for (i=0; i<howMuchTrees; i++) {
-		x0 = rng() * canvas.width;
-		y0 = rng() * canvas.height;
-		r0 = treeSize * (1 + rng());
-		stepsNo = Math.round(treeSteps*(0.75+rng()));
+		treePositions.push([
+			rng() * canvas.width,
+			rng() * canvas.height,
+			treeSize * (1 + rng()),
+			Math.round(treeSteps*(0.75+rng())),
+			Math.round(360+120*rng())
+		]);
+	}
+	for (i=0; i<howMuchTrees; i++) {
+		rng = createRNG(1.0*seed + x0*11 + y0*17);
+		x0 = treePositions[i][0];
+		y0 = treePositions[i][1];
+		r0 = treePositions[i][2];
+		stepsNo = treePositions[i][3];
+		angleSteps = treePositions[i][4];
 		if (!collidesWithPrevious([listOfCirclesForRiver, listOfCirclesForClearings, listOfCirclesForTrees], x0, y0, r0)) {
-			if (rng() > leavedTreeProportion) {
+			if (rng() > leavedTreeProportion) {				
 				drawTreeRounded(
-					context, x0, y0, r0*2, centerRandomness, stepsNo, 120,
+					context, x0, y0, r0*2, centerRandomness, stepsNo, angleSteps,
 					5*serrationAmplitude, 2*serrationAmplitude,
 					7*serrationFrequency, 4*serrationFrequency,
 					0.5*serrationRandomness, 0.14*serrationRandomness,
@@ -880,10 +984,11 @@ function run(dt, forceRedraw) {
 					rng,
 					true
 				);
-				listOfCirclesForTrees.push({x:x0, y:y0, r:r0*4*treeSeparation});
+				//listOfCirclesForTrees.push({x:x0, y:y0, r:r0*4*treeSeparation});
+				addCircleToListOfColliders(listOfCirclesForTrees, x0, y0, r0*4*treeSeparation);
 			} else {
 				drawTreeRounded(
-					context, x0, y0, r0*2, centerRandomness, stepsNo, 120,
+					context, x0, y0, r0*2, centerRandomness, stepsNo, angleSteps,
 					5*serrationAmplitude, 2*serrationAmplitude,
 					9*serrationFrequency, 4*serrationFrequency,
 					0.6*serrationRandomness, 0.24*serrationRandomness,
@@ -891,7 +996,8 @@ function run(dt, forceRedraw) {
 					rng,
 					false
 				);
-				listOfCirclesForTrees.push({x:x0, y:y0, r:r0*4*treeSeparation});
+				//listOfCirclesForTrees.push({x:x0, y:y0, r:r0*4*treeSeparation});
+				addCircleToListOfColliders(listOfCirclesForTrees, x0, y0, r0*4*treeSeparation);
 			}
 		} else {
 			callRngNTimesToBalancePaths(6);
@@ -904,6 +1010,23 @@ function run(dt, forceRedraw) {
 			}
 		}
 	}
+	
+	if (showColliders>0) {
+		for (i=0; i<listOfCirclesForTrees.length; i++) {
+			drawPolygon(canvas, context, listOfCirclesForTrees[i]);
+		}
+	}
+	if (showColliders>1) {
+		for (i=0; i<listOfCirclesForRiver.length; i++) {
+			drawPolygon(canvas, context, listOfCirclesForRiver[i]);
+		}
+	}
+	if (showColliders>2) {
+		for (i=0; i<listOfCirclesForClearings.length; i++) {
+			drawPolygon(canvas, context, listOfCirclesForClearings[i]);
+		}
+	}
+	
 	context.restore();
 	
 	document.redrawNeeded = false;

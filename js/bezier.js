@@ -1,4 +1,3 @@
-//use strict';
 
 // const PLOT_HEIGHT = 500;
 

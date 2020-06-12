@@ -38,7 +38,7 @@ function equals(x1, x) {
     return true;
 }
 ///point
-var Point = function(x,y) {
+var PointF = function(x,y) {
     this.x = x;
     this.y = y;
 };
@@ -451,6 +451,9 @@ static.clip = function ( op, subj, clip, polyClass) {
         var e1 = aet.top_node ;
 
 		
+		if (aet.top_node == null) {
+			return result;
+		}
 		
         /* Set up bundle fields of first edge */
         aet.top_node.bundle[Clip.ABOVE][ aet.top_node.type ] = (aet.top_node.top.y != yb) ? 1: 0;
@@ -1604,9 +1607,9 @@ gpcas.geometry.BundleState.prototype.toString = function() {
 
 /////////////// EdgeNode ////////////////////////////
 gpcas.geometry.EdgeNode = function(){
-	this.vertex= new Point(); /* Piggy-backed contour vertex data  */
-	this.bot= new Point(); /* Edge lower (x, y) coordinate      */
-	this.top= new Point(); /* Edge upper (x, y) coordinate      */
+	this.vertex= new PointF(); /* Piggy-backed contour vertex data  */
+	this.bot= new PointF(); /* Edge lower (x, y) coordinate      */
+	this.top= new PointF(); /* Edge upper (x, y) coordinate      */
 	this.xb;           /* Scanbeam bottom x coordinate      */
 	this.xt;           /* Scanbeam top x coordinate         */
 	this.dx;           /* Change in x for a unit y increase */
@@ -1710,7 +1713,7 @@ gpcas.geometry.IntersectionPoint.prototype.toString = function (){
 ///////////////////////////    ItNode   ///////////////
 gpcas.geometry.ItNode = function(edge0, edge1, x, y, next){
 	this.ie= [];     /* Intersecting edge (bundle) pair   */
-	this.point= new Point(x,y); /* Point of intersection             */
+	this.point= new PointF(x,y); /* Point of intersection             */
 	this.next=next;                         /* The next intersection table node  */
 	
 	this.ie[0] = edge0 ;
@@ -1809,7 +1812,7 @@ gpcas.geometry.LineHelper.lineIntersectLine = function(A,B,E,F,as_seg)
 	if(denom == 0){
 		return null;
 	}
-	ip=new Point();
+	ip=new PointF();
 	ip.x=(b1*c2 - b2*c1)/denom;
 	ip.y=(a2*c1 - a1*c2)/denom;
  
@@ -1833,7 +1836,7 @@ gpcas.geometry.LineHelper.lineIntersectLine = function(A,B,E,F,as_seg)
 			return null;
 		}
 	}
-	return new Point(Math.round(ip.x),Math.round(ip.y));
+	return new PointF(Math.round(ip.x),Math.round(ip.y));
 }
 
 
@@ -1897,7 +1900,7 @@ gpcas.geometry.LineIntersection.intersectPoly = function(poly, line /* of Points
 			p3=poly.getPoint(j==0?numPoints-1:j-1);
 			p4=poly.getPoint(j);	
 			if ((ip=LineHelper.lineIntersectLine(p1,p2,p3,p4))!=null){
-				dist=Point.distance(ip,p2);		
+				dist=PointF.distance(ip,p2);		
 					
 				if ((dist>maxDist)&&(!firstFound)){
 					maxDist=dist;
@@ -2084,7 +2087,7 @@ gpcas.geometry.PolyDefault.prototype.add = function(arg0,arg1) {
 	if (args.length==2){
 		this.addPointXY(args[0], args[1]);
    	} else if (args.length==1){
-   		if (args[0] instanceof Point){
+   		if (args[0] instanceof PointF){
    			this.addPoint(args[0]);	
    		} else if (args[0] instanceof gpcas.geometry.PolySimple){
    			this.addPoly(args[0]);
@@ -2107,7 +2110,7 @@ gpcas.geometry.PolyDefault.prototype.add = function(arg0,arg1) {
     * it will create an inner polygon of type <code>PolySimple</code>.
     */
 gpcas.geometry.PolyDefault.prototype.addPointXY = function(x, y) {
-    this.addPoint(new Point( x, y ));
+    this.addPoint(new PointF( x, y ));
 }
    /**
     * Add a point to the first inner polygon.
@@ -2274,7 +2277,8 @@ gpcas.geometry.PolyDefault.prototype.setContributing = function( polyIndex, cont
     var m_List = this.m_List;
 	if( m_List.size() != 1)
       {
-        alert( "Only applies to polys of size 1" );
+		//null[0];
+        //alert( "Only applies to polys of size 1" );
       }
      (m_List.get(polyIndex)).setContributing( 0, contributes );
 }
@@ -2324,9 +2328,9 @@ gpcas.geometry.PolyDefault.prototype.difference = function(p){
     */
 gpcas.geometry.PolyDefault.prototype.getArea = function() {
       var area= 0.0;
-      for( var i= 0; i < getNumInnerPoly() ; i++ )
+      for( var i= 0; i < this.getNumInnerPoly() ; i++ )
       {
-         var p= getInnerPoly(i);
+         var p= this.getInnerPoly(i);
          var tarea = p.getArea() * (p.isHole() ? -1.0: 1.0);
          area += tarea ;
       }
@@ -2346,7 +2350,7 @@ gpcas.geometry.PolyDefault.prototype.toString = function() {
          var points = [];
          for( var j= 0; j < p.getNumPoints() ; j++ )
          {
-         	points.push(new Point(p.getX(j),p.getY(j)));
+         	points.push(new PointF(p.getX(j),p.getY(j)));
          }
          points = ArrayHelper.sortPointsClockwise(points) ;
          
@@ -2371,7 +2375,7 @@ gpcas.geometry.Polygon.prototype.fromArray = function(v) {
 	
 	for(var i=0 ; i<v.length ; i++) {
 		var pointArr = v[i];
-		this.vertices.push(new Point(pointArr[0],pointArr[1]));
+		this.vertices.push(new PointF(pointArr[0],pointArr[1]));
 	}
 }
 
@@ -2647,7 +2651,7 @@ gpcas.geometry.PolySimple.prototype.add = function(arg0,arg1) {
    	if (args.length==2){
 		this.addPointXY(args[0] , args[1] );
    	} else if (args.length==1){
-   		if (args[0] instanceof Point){
+   		if (args[0] instanceof PointF){
                this.addPoint(args[0]);
    		} else if (args[0] instanceof Poly){
                this.addPoly(args[0]);
@@ -2665,7 +2669,7 @@ gpcas.geometry.PolySimple.prototype.add = function(arg0,arg1) {
     * Add a point to the first inner polygon.
     */
 gpcas.geometry.PolySimple.prototype.addPointXY = function(x, y) {
-    this.addPoint( new Point( x, y ) );
+    this.addPoint( new PointF( x, y ) );
 }
    
    /**
