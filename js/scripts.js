@@ -573,7 +573,7 @@ function drawHexGrid(canvas, context, radius, gridOpacity) {
 	var hexH = radius * 2.0;
 	var dx = 0;
 	var dy = 0;
-	for (y0=0; y0<canvas.height+hexH; y0+=hexH + dy * 2) {
+	for (y0=radius*15.0/32.0-hexH; y0<canvas.height+hexH; y0+=hexH + dy * 2) {
 		if (dx <= 0) {
 			dx = hexW/2;
 			dy = - hexH/4;
@@ -581,7 +581,7 @@ function drawHexGrid(canvas, context, radius, gridOpacity) {
 			dx = 0;
 			dy = 0;
 		}
-		for (x0=0; x0<canvas.width+hexW; x0+=hexW) {
+		for (x0=radius*26.0/32.0-hexW; x0<canvas.width+hexW; x0+=hexW) {
 			context.moveTo(dx + x0 - hexW/2, dy + y0 - hexH/4);
 			context.lineTo(dx + x0         , dy + y0 -  hexH/2);
 			context.lineTo(dx + x0 + hexW/2, dy + y0 -  hexH/4);
