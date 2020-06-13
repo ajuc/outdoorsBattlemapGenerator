@@ -556,7 +556,7 @@ function drawRectGrid(canvas, context, radius, gridOpacity) {
 	
 	context.beginPath();
 	context.lineWidth = 1;
-	context.strokeStyle = rgba(0, 0, 0, gridOpacity);
+	context.strokeStyle = rgba(0, 255, 255, gridOpacity);
 	context.moveTo(0,0);
 	for (y0=0; y0<canvas.height+radius*2; y0+=(radius * 2)) {
 		context.moveTo(0, y0);
@@ -573,7 +573,7 @@ function drawRectGrid(canvas, context, radius, gridOpacity) {
 function drawHexGrid(canvas, context, radius, gridOpacity) {
 	var x0, y0;
 	context.beginPath();
-	context.strokeStyle = rgba(0, 0, 0, gridOpacity);
+	context.strokeStyle = rgba(0, 255, 255, gridOpacity);
 	context.moveTo(0,0);
 	var hexW = radius * Math.sqrt(3.0);
 	var hexH = radius * 2.0;
@@ -639,7 +639,7 @@ function collidesWithPrevious(lists, x, y, r) {
 	var list;
 	var intersection;
 	var collides;
-	var polygon = createPolygonFromCircle(x, y, r*0.95);
+	var polygon = createPolygonFromCircle(x, y, r*0.9);
 	for (j=0; j<lists.length; j++) {	
 		list = lists[j];
 		for (i=0; i<list.length; i++) {
@@ -670,12 +670,53 @@ function drawStone(canvas, context, x, y, r, rng, colorRandomness, fillOpacity) 
 	context.fill();
 }
 
+/*
 function drawBackground(canvas, context, rng) {
 	if (!document.image)
 		return;
     //context.fillStyle = context.createPattern(document.image, "repeat");
     context.fillStyle=rgba(0.0, 128, 0.0, 128.0);
 	context.fillRect(0, 0, canvas.width, canvas.height);
+}
+*/
+
+function drawBackground(canvas, context, rng, fill, patchSize, r, avoidCollidersList) {
+	if (!document.image)
+		return;
+    //context.fillStyle = context.createPattern(document.image, "repeat");
+    if (fill) {
+		context.fillStyle=rgba(0.0, 128, 0.0, 255.0);
+		context.fillRect(0, 0, canvas.width, canvas.height);
+	}
+	
+	var patchSizeX = patchSize;
+	var patchSizeY = patchSize;
+	var minR = r*0.2;
+	var maxR = r*0.5+rng()*r*0.5;
+	var x0,y0, lastAngle;
+	
+	for (var x=0; x<canvas.width; x+=patchSizeX) {
+		for (var y=0; y<canvas.height; y+=patchSizeY) {
+			context.beginPath();
+			x0 = x+patchSizeX/2 + rng()*patchSizeX;
+			y0 = y+patchSizeY/2 + rng()*patchSizeY;
+			
+			if (avoidCollidersList.length == 0 || !collidesWithPrevious([avoidCollidersList], x0, y0, 1)) {					
+				context.strokeStyle=rgba(10+rng()*25, 80+rng()*110, 20+rng()*25, 250);
+				context.lineWidth = 1;
+				context.moveTo(x0, y0);
+				
+				for (var angle=Math.PI*0; angle<Math.PI*2; angle+=(10.0+rng()*60.0)*Math.PI*2.0/360) {
+					context.lineTo(x0 + maxR*Math.cos(angle), y0 - maxR*Math.sin(angle));
+					context.moveTo(x0 + minR*Math.cos(lastAngle), y0 - minR*Math.sin(lastAngle));
+					lastAngle = angle;
+				}
+							
+				context.closePath();
+				context.stroke();
+			}
+		}
+	}		
 }
 
 function drawPolygon(canvas, context, polygon) {
@@ -689,6 +730,7 @@ function drawPolygon(canvas, context, polygon) {
 	}
 	context.closePath();
 	context.stroke();
+	context.lineWidth = 1;
 }
 
 function drawRiver(canvas, context, angles, midpoints, widths, serrationAmplitude, serrationFrequency, serrationRandomness, rng, outListOfColliders, fillOpacity, r, g, b) {
@@ -903,15 +945,12 @@ function run(dt, forceRedraw) {
 	var seed = document.getElementById("seed").value;
 	rng = createRNG(seed);
 
-	drawBackground(canvas, context, rng);
+	drawBackground(canvas, context, rng, true, 18, 35, []);
 	
 	var gridType = Math.round(document.getElementById("gridType").value);
 	var gridSize = Math.round(document.getElementById("gridSize").value);
 	var gridOpacity = document.getElementById("gridOpacity").value * 0.01;
-	if (gridType > 0)
-		drawRectGrid(canvas, context, gridSize, gridOpacity);
-	else if (gridType < 0)
-		drawHexGrid(canvas, context, gridSize, gridOpacity);
+	
 
 	var howMuchTrees = (canvas.width/130 * canvas.height/130) * document.getElementById("treeDensity").value * 0.05;
 	var howMuchStones = (canvas.width/130 * canvas.height/130) * document.getElementById("stoneDensity").value * 0.1;
@@ -966,6 +1005,7 @@ function run(dt, forceRedraw) {
 		}
 	}
 	
+	
 	rng = createRNG(seed);
 	for (i=0; i<clearings; i++) {
 		x0 = rng() * canvas.width;
@@ -989,7 +1029,14 @@ function run(dt, forceRedraw) {
 			callRngNTimesToBalancePaths(4);
 		}
 	}
+	
+	drawBackground(canvas, context, rng, false, 25, 18, listOfCirclesForRiver);
 
+	if (gridType > 0)
+		drawRectGrid(canvas, context, gridSize, gridOpacity);
+	else if (gridType < 0)
+		drawHexGrid(canvas, context, gridSize, gridOpacity);
+	
 	rng = createRNG(seed);
 	var treePositions = [];
 	for (i=0; i<howMuchTrees; i++) {
