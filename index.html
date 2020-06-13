@@ -72,7 +72,7 @@
 			</span>
 			<span>
 				<label>grid size</label>
-				<input type="number"  min="50" max="256" class="slider" id="gridSize"></input>
+				<input type="number"  min="50" max="256" id="gridSize"></input>
 			</span>
 			<span>
 				<label>grid opacity</label>
@@ -132,6 +132,10 @@
 				<label>show colliders</label>
 				<input type="range" min="0" max="3" class="slider" id="showColliders"></input>
 			</span>
+			<span>
+				<label>autoredraw</label>
+				<input type="checkbox" class="checkbox" checked="true" id="autoredraw"></input>
+			</span>
 		</p>
 	</form>
 	<p>
@@ -139,7 +143,7 @@
 		<button id="randomizeParameters">Randomize parameters</button>
 		<button id="generate">Generate similar (F5)</button>
 		<button id="exportDd2vtt">Export to .dd2vtt</button>
-
+		<button id="redraw">redraw</button>
 		<!-- <a href="#" class="button" id="download" download="my-file-name.png">Download</a> -->
 		
 		<!-- <button id="clearStorage">Clear storage</button> -->

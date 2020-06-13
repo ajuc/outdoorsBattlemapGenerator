@@ -86,18 +86,20 @@ function init()
     if( canvas.getContext )
     {
         if (typeof (canvas.getContext) !== undefined) {
-			run(0, true);
+			document.forceRedraw = true;
+			run(0);
 		}
     }
 }
 
 function addListener(name) {
+	var neededRedraws = getNeededRedrawsFor(name);
 	document.getElementById(name).addEventListener('change', (event) => {
 		save(name);
-		setRedrawNeeded(true);
+		setRedrawNeeded(true, neededRedraws);
 	});
 	document.getElementById(name).addEventListener('input', (event) => {
-		setRedrawNeeded(true);
+		setRedrawNeeded(true, neededRedraws);
 	});
 }
 
@@ -136,7 +138,8 @@ function getParameterNames() {
 		"showColliders",
 		"grassLength",
 		"grassDensity",
-		"grassSpread"
+		"grassSpread",
+		"autoredraw"
 	];
 }
 
@@ -166,11 +169,76 @@ function getParameterDefaultValue(name) {
 		"treeSteps": 3,
 		"backgroundNo": 1,
 		"showColliders": 0,
-		"grassLength": 0.5,
-		"grassDensity": 0.5,
-		"grassSpread": 0.5
+		"grassLength": 45,
+		"grassDensity": 50,
+		"grassSpread": 50,
+		"autoredraw": true
 	};
 	return defaults[name];
+}
+
+function allRedraws() {
+	return {"background": true, "river": true, "clearings":true, "stones": true, "twigs": true, "backgroundCover": true, "grid":true, "trees": true};
+}
+function noneRedraws() {
+	return {"background": false, "river": false, "clearings":false, "stones": false, "twigs": false, "backgroundCover": false, "grid":false, "trees": false};
+}
+function onlyOneRedraw(name) {
+	var r = noneRedraws();
+	r[name]=true;
+	return r;
+}
+function onlyTheseRedraws(names) {
+	var r = noneRedraws();
+	for (var n of names) {
+		r[n]=true;
+	}
+	return r;
+}
+function onlyRedrawsAfter(name) {
+	var alreadyPassed = false;
+	var result = {};
+	for (var n of ["background", "river", "clearings", "stones", "twigs", "backgroundCover", "grid", "trees"]) {
+		if (n === name) {
+			alreadyPasssed = true;
+		}
+		result[n] = alreadyPassed;
+	}
+	return result;
+}
+
+function getNeededRedrawsFor(name) {
+	const functions = {
+		"gridType": onlyOneRedraw("grid"),
+		"gridSize": onlyOneRedraw("grid"),
+		"gridOpacity": onlyOneRedraw("grid"),
+		"width": allRedraws,
+		"height": allRedraws,
+		"seed": allRedraws,
+		"treeDensity": onlyOneRedraw("trees"),
+		"stoneDensity": onlyOneRedraw("stones"),
+		"twigsDensity": onlyOneRedraw("twigs"),
+		"riverSize": onlyRedrawsAfter("river"),
+		"centerRandomness": onlyOneRedraw("trees"),
+		"leavedTreeProportion": onlyOneRedraw("trees"),
+		"treeSize": onlyOneRedraw("trees"),
+		"treeColor": onlyOneRedraw("trees"),
+		"treeSeparation": onlyOneRedraw("trees"),
+		"serrationAmplitude": onlyOneRedraw("trees"),
+		"serrationFrequency": onlyOneRedraw("trees"),
+		"serrationRandomness": onlyOneRedraw("trees"),
+		"colorRandomness": onlyOneRedraw("trees"),
+		"clearings": onlyRedrawsAfter("clearings"),
+		"clearingSize": onlyRedrawsAfter("clearings"),
+		"treeSteps": onlyOneRedraw("trees"),
+		"backgroundNo": onlyTheseRedraws(["background", "backgroundCover"]),
+		"showColliders": onlyOneRedraw("colliders"),
+		"grassLength": onlyTheseRedraws(["background", "backgroundCover"]),
+		"grassDensity": onlyTheseRedraws(["background", "backgroundCover"]),
+		"grassSpread": onlyTheseRedraws(["background", "backgroundCover"]),
+		"autoredraw": noneRedraws()
+	};
+	return functions[name];
 }
 
 function getParameterRandomizeFunction(name) {
@@ -199,9 +267,10 @@ function getParameterRandomizeFunction(name) {
 		"treeSteps": function () { return Math.round(3 + Math.random() * 2); },
 		"backgroundNo": null,
 		"showColliders": null,
-		"grassLength": function () { return Math.round(0.1 + Math.random() * 0.9); },
-		"grassDensity": function () { return Math.round(0.1 + Math.random() * 0.9); },
-		"grassSpread": function () { return Math.round(0.1 + Math.random() * 0.9); }
+		"grassLength": function () { return Math.round(25 + Math.random() * 50); },
+		"grassDensity": function () { return Math.round(25 + Math.random() * 50); },
+		"grassSpread": function () { return Math.round(25 + Math.random() * 50); },
+		"autoredraw": null
 	};
 	return functions[name];
 }
@@ -371,6 +440,10 @@ function addListeners() {
 	document.getElementById("exportDd2vtt").addEventListener('click', (event) => {
 		exportDd2vtt();
 	});
+	document.getElementById("redraw").addEventListener('click', (event) => {
+		document.forceRedraw = true;
+		setRedrawNeeded(true, allRedraws());
+	});
 	// document.getElementById("download").addEventListener('click', (event) => {
 		// var canvas = document.getElementById("canvas");
 		// var dataURL = canvas.toDataURL('image/png');
@@ -383,7 +456,7 @@ function addListeners() {
 	// });
 	document.image.addEventListener('load', (event) => {
 		console.warn("loaded");
-		setRedrawNeeded(true);
+		setRedrawNeeded(true, allRedraws());
 	});
 	document.getElementById("width").addEventListener('change', (event) => {
 		var pixelsPerTile = 2*Math.round(document.getElementById("gridSize").value);
@@ -392,7 +465,7 @@ function addListeners() {
 		canvas.width = roundedWidth;
 		recreateBuffersFrom(canvas);
 		save("width");
-		setRedrawNeeded(true);
+		setRedrawNeeded(true, allRedraws());
 	});
 	document.getElementById("height").addEventListener('change', (event) => {
 		var pixelsPerTile = 2*Math.round(document.getElementById("gridSize").value);
@@ -401,7 +474,7 @@ function addListeners() {
 		canvas.height = roundedHeight;
 		recreateBuffersFrom(canvas);
 		save("height");
-		setRedrawNeeded(true);
+		setRedrawNeeded(true, allRedraws());
 	});
 	var parameterNames = getParameterNames();
 	for(var parameterName of parameterNames) {
@@ -415,13 +488,16 @@ function addListeners() {
 	});
 }
 
-function setRedrawNeeded(needed) {
+function setRedrawNeeded(needed, details) {
 	if (needed) {
 		document.getElementById("redrawIndicator").style.display="fixed";
+		document.getElementById("redraw").style="background-color: red";
 	} else {
 		document.getElementById("redrawIndicator").style.display="none";
+		document.getElementById("redraw").style="background-color: light-gray";
 	}
 	document.redrawNeeded = needed;
+	document.redrawNeededDetails = details;
 }
 
 function clearStorage() {
@@ -435,7 +511,7 @@ function resetParameters() {
 	}
 	backgroundChanged(document.getElementById("backgroundNo").value);
 	saveParametersToLocalStorage();
-	setRedrawNeeded(true);
+	setRedrawNeeded(true, allRedraws());
 }
 
 function randomizeParameters() {
@@ -447,7 +523,7 @@ function randomizeParameters() {
 		}
 	}
 	saveParametersToLocalStorage();
-	setRedrawNeeded(true);
+	setRedrawNeeded(true, allRedraws());
 }
 
 function getPerlin(x,y) {
@@ -746,7 +822,7 @@ function drawBackground(canvas, context, rng) {
 
 function drawGrass(canvas, context, rng, fill, patchSize, r, probability, avoidCollidersList) {
 	var grassLength = document.getElementById("grassLength").value/100.0;
-	var grassDensity = document.getElementById("grassDensity").value/100.0;
+	var grassDensity = document.getElementById("grassDensity").value/200.0;
 	
 	var patchSizeX = patchSize/grassDensity;
 	var patchSizeY = patchSize/grassDensity;
@@ -764,19 +840,17 @@ function drawGrass(canvas, context, rng, fill, patchSize, r, probability, avoidC
 			if (avoidCollidersList.length == 0 || !collidesWithPrevious([avoidCollidersList], x0, y0, 1)) {					
 				context.strokeStyle=rgba(10+rng()*25, 110+rng()*110, 20+rng()*25, 250);
 				context.lineWidth = 1;
-				context.moveTo(x0, y0);
 				
 				for (var angle=Math.PI*0; angle<Math.PI*2; angle+=(10.0+rng()*60.0)*Math.PI*2.0/360) {
 					if (rng() < probability) {
+						context.moveTo(x0, y0);
 						context.lineTo(x0 + maxR*Math.cos(angle), y0 - maxR*Math.sin(angle));
-						context.moveTo(x0 + minR*Math.cos(lastAngle), y0 - minR*Math.sin(lastAngle));
-						lastAngle = angle;
 					}
 				}
-							
-				context.closePath();
-				context.stroke();
+				
 			}
+			context.closePath();
+			context.stroke();
 		}
 	}
 }
@@ -1013,11 +1087,18 @@ function callRngNTimesToBalancePaths(n) {
 	}
 }
 
-function run(dt, forceRedraw) {
+function run(dt) {
 	window.requestAnimationFrame(run);
 	
-	if (!document.redrawNeeded && !forceRedraw)
+	if (!document.redrawNeeded && !document.forceRedraw)
 		return;
+	
+	var autoredraw = document.getElementById("autoredraw").checked;
+	if (!autoredraw && !document.forceRedraw)
+		return;
+	
+	if (document.forceRedraw)
+		document.forceRedraw = false;
 	
 	var canvas = document.getElementById("canvas");
 	var context = canvas.getContext("2d");
@@ -1199,5 +1280,5 @@ function run(dt, forceRedraw) {
 	
 	context.restore();
 	
-	setRedrawNeeded(false);
+	setRedrawNeeded(false, noneRedraws());
 }
