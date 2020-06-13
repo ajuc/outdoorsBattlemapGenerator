@@ -20,6 +20,10 @@ var PolygonNode = gpcas.geometry.PolygonNode;
 var ItNodeTable = gpcas.geometry.ItNodeTable;
 var StNode = gpcas.geometry.StNode;
 var ItNode = gpcas.geometry.ItNode;
+	
+var listOfCirclesForRiver = [];
+var listOfCirclesForClearings = [];
+var listOfCirclesForTrees = [];
 
 function init()
 {
@@ -111,9 +115,9 @@ function getParameterDefaultValue(name) {
 		"riverSize": 2,
 		"centerRandomness": 30,
 		"leavedTreeProportion": 95,
-		"treeSize": 50,
+		"treeSize": 70,
 		"treeColor": 120,
-		"treeSeparation": 60,
+		"treeSeparation": 40,
 		"serrationAmplitude": 130,
 		"serrationFrequency": 30,
 		"serrationRandomness": 250,
@@ -267,7 +271,7 @@ function createExportTemplate(mapOriginInTiles, mapSizeInTiles, pixelsPerTile) {
 		"line_of_sight": [],
 		"portals": [],
 		"environment": {
-			"baked_lighting": true,
+			"baked_lighting": false,
 			"ambient_light": "ffffffff"
 		},
 		"lights": [],
@@ -276,7 +280,29 @@ function createExportTemplate(mapOriginInTiles, mapSizeInTiles, pixelsPerTile) {
 }
 
 function exportDd2vtt() {
-	var exportObject = createExportTemplate([0,0], [48, 48], 64);
+	var gridSize = Math.round(document.getElementById("gridSize").value);
+	var width = document.getElementById("width").value;
+	var height = document.getElementById("height").value;
+	
+	var exportObject = createExportTemplate([0,0], [Math.ceil(width/gridSize), Math.ceil(height/gridSize)], gridSize);
+	var canvas = document.getElementById("canvas");
+	var img = canvas.toDataURL("image/png");
+	
+	exportObject.image = img.slice(22); //data:image/png;base64,i
+	for (var collider of listOfCirclesForTrees) {
+		var colliderRepresentation = [];
+		var colliderPoints = getPolygonVertices(collider);
+		for (var point of colliderPoints) {
+			colliderRepresentation.push({"x": point[0]/gridSize, "y": point[1]/gridSize});
+		}
+		colliderRepresentation.push({"x": colliderPoints[0][0]/gridSize, "y": colliderPoints[0][1]/gridSize});
+		exportObject.line_of_sight.push(colliderRepresentation);
+	}
+	var result = JSON.stringify(exportObject);
+	var blob = new Blob([result], {
+    type: "text/plain;charset=utf-8;",
+	});
+	saveAs(blob, "exported.dd2vtt");
 }
 
 function addListeners() {
@@ -640,7 +666,8 @@ function drawBackground(canvas, context, rng) {
 	if (!document.image)
 		return;
     context.fillStyle = context.createPattern(document.image, "repeat");
-    context.fillRect(0, 0, canvas.width, canvas.height);
+    //context.fillStyle=rgba(0.0, 0.9, 0.0, 1.0);
+	context.fillRect(0, 0, canvas.width, canvas.height);
 }
 
 function drawPolygon(canvas, context, polygon) {
@@ -901,9 +928,9 @@ function run(dt, forceRedraw) {
 	//rng();
 	var i=0;
 	
-	var listOfCirclesForRiver = [];
-	var listOfCirclesForClearings = [];
-	var listOfCirclesForTrees = [];
+	listOfCirclesForRiver = [];
+	listOfCirclesForClearings = [];
+	listOfCirclesForTrees = [];
 	
 	var x0, y0, r0;
 	
