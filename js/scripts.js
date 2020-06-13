@@ -103,8 +103,8 @@ function getParameterNames() {
 
 function getParameterDefaultValue(name) {
 	const defaults = {
-		"gridType": -1,
-		"gridSize": 64,
+		"gridType": 1,
+		"gridSize": 32,
 		"gridOpacity": 30,
 		"width": 1920,
 		"height": 1080,
@@ -613,7 +613,7 @@ function createRNG(seed) {
   };
 }
 
-function collidesWithPrevious(lists, x, y, r) {
+/*function collidesWithPrevious(lists, x, y, r) {
 	var i, j;
 	var list;
 	var collides;
@@ -626,14 +626,14 @@ function collidesWithPrevious(lists, x, y, r) {
 		}
 	}
 	return false;
-}
+}*/
 
 function collidesWithPrevious(lists, x, y, r) {
 	var i, j;
 	var list;
 	var intersection;
 	var collides;
-	var polygon = createPolygonFromCircle(x, y, r);
+	var polygon = createPolygonFromCircle(x, y, r*0.95);
 	for (j=0; j<lists.length; j++) {	
 		list = lists[j];
 		for (i=0; i<list.length; i++) {
