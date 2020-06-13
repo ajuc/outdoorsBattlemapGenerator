@@ -25,6 +25,41 @@ var listOfCirclesForRiver = [];
 var listOfCirclesForClearings = [];
 var listOfCirclesForTrees = [];
 
+var backgroundBuffer;
+var riverBuffer;
+var stonesBuffer;
+var twigsBuffer;
+var backgroundCoverBuffer;
+var treesBuffer;
+
+function removeIfExists(offscreenCanvas) {
+	if (offscreenCanvas) {
+		document.removeChild(backgroundBuffer);
+		delete offscreenCanvas;
+	}
+	return null;
+}
+
+function recreateBuffersFrom(canvas) {
+	backgroundBuffer = removeIfExists(backgroundBuffer);
+	backgroundBuffer = createOffscreenBuffer(canvas);
+	
+	riverBuffer = removeIfExists(riverBuffer);
+	riverBuffer = createOffscreenBuffer(canvas);
+	
+	stonesBuffer = removeIfExists(stonesBuffer);
+	stonesBuffer = createOffscreenBuffer(canvas);
+	
+	twigsBuffer = removeIfExists(twigsBuffer);
+	twigsBuffer = createOffscreenBuffer(canvas);
+	
+	backgroundCoverBuffer = removeIfExists(backgroundCoverBuffer);
+	backgroundCoverBuffer = createOffscreenBuffer(canvas);
+	
+	treesBuffer = removeIfExists(treesBuffer);
+	treesBuffer = createOffscreenBuffer(canvas);
+}
+
 function init()
 {
 	document.image = new Image();
@@ -37,7 +72,8 @@ function init()
 	
 	canvas.width = document.getElementById("width").value;
 	canvas.height = document.getElementById("height").value;	
-	
+	recreateBuffersFrom(canvas);
+
 	addListeners();
 	
 	document.getElementById("seed").value = Math.round(Math.random()*655536);
@@ -58,10 +94,10 @@ function init()
 function addListener(name) {
 	document.getElementById(name).addEventListener('change', (event) => {
 		save(name);
-		document.redrawNeeded = true;
+		setRedrawNeeded(true);
 	});
 	document.getElementById(name).addEventListener('input', (event) => {
-		document.redrawNeeded = true;
+		setRedrawNeeded(true);
 	});
 }
 
@@ -97,7 +133,10 @@ function getParameterNames() {
 		"clearingSize",
 		"treeSteps",
 		"backgroundNo",
-		"showColliders"
+		"showColliders",
+		"grassLength",
+		"grassDensity",
+		"grassSpread"
 	];
 }
 
@@ -126,7 +165,10 @@ function getParameterDefaultValue(name) {
 		"clearingSize": 30,
 		"treeSteps": 3,
 		"backgroundNo": 1,
-		"showColliders": 0
+		"showColliders": 0,
+		"grassLength": 0.5,
+		"grassDensity": 0.5,
+		"grassSpread": 0.5
 	};
 	return defaults[name];
 }
@@ -156,7 +198,10 @@ function getParameterRandomizeFunction(name) {
 		"clearingSize": function () { return Math.round(30 + Math.random() * 20); },
 		"treeSteps": function () { return Math.round(3 + Math.random() * 2); },
 		"backgroundNo": null,
-		"showColliders": null
+		"showColliders": null,
+		"grassLength": function () { return Math.round(0.1 + Math.random() * 0.9); },
+		"grassDensity": function () { return Math.round(0.1 + Math.random() * 0.9); },
+		"grassSpread": function () { return Math.round(0.1 + Math.random() * 0.9); }
 	};
 	return functions[name];
 }
@@ -191,6 +236,12 @@ function backgroundChanged(backgroundNo) {
 		document.image.src = "gfx/pattern_"+backgroundNo+".png";
 	}
 	//document.image.crossOrigin = "Anonymous";
+}
+
+function createOffscreenBuffer(canvas) {
+	var offscreenCanvas = document.createElement('canvas');
+	offscreenCanvas.width = canvas.width;
+	offscreenCanvas.height = canvas.height;
 }
 
 function createPolygonFromCircle(x, y, radius) {
@@ -332,23 +383,25 @@ function addListeners() {
 	// });
 	document.image.addEventListener('load', (event) => {
 		console.warn("loaded");
-		document.redrawNeeded = true;
+		setRedrawNeeded(true);
 	});
 	document.getElementById("width").addEventListener('change', (event) => {
 		var pixelsPerTile = 2*Math.round(document.getElementById("gridSize").value);
 		var roundedWidth = pixelsPerTile * Math.ceil(event.target.value/pixelsPerTile);
 		document.getElementById("width").value = roundedWidth;
 		canvas.width = roundedWidth;
+		recreateBuffersFrom(canvas);
 		save("width");
-		document.redrawNeeded = true;
+		setRedrawNeeded(true);
 	});
 	document.getElementById("height").addEventListener('change', (event) => {
 		var pixelsPerTile = 2*Math.round(document.getElementById("gridSize").value);
 		var roundedHeight = pixelsPerTile * Math.ceil(event.target.value/pixelsPerTile);
 		document.getElementById("height").value = roundedHeight;
 		canvas.height = roundedHeight;
+		recreateBuffersFrom(canvas);
 		save("height");
-		document.redrawNeeded = true;
+		setRedrawNeeded(true);
 	});
 	var parameterNames = getParameterNames();
 	for(var parameterName of parameterNames) {
@@ -362,6 +415,15 @@ function addListeners() {
 	});
 }
 
+function setRedrawNeeded(needed) {
+	if (needed) {
+		document.getElementById("redrawIndicator").style.display="fixed";
+	} else {
+		document.getElementById("redrawIndicator").style.display="none";
+	}
+	document.redrawNeeded = needed;
+}
+
 function clearStorage() {
 	window.localStorage.clear();
 }
@@ -373,7 +435,7 @@ function resetParameters() {
 	}
 	backgroundChanged(document.getElementById("backgroundNo").value);
 	saveParametersToLocalStorage();
-	document.redrawNeeded = true;
+	setRedrawNeeded(true);
 }
 
 function randomizeParameters() {
@@ -385,7 +447,7 @@ function randomizeParameters() {
 		}
 	}
 	saveParametersToLocalStorage();
-	document.redrawNeeded = true;
+	setRedrawNeeded(true);
 }
 
 function getPerlin(x,y) {
@@ -682,60 +744,44 @@ function drawBackground(canvas, context, rng) {
 }
 */
 
-function drawGrass(canvas, context, rng, fill, patchSize, r, avoidCollidersList) {
-var patchSizeX = patchSize;
-	var patchSizeY = patchSize;
-	var minR = r*0.2;
-	var maxR = r*0.5+rng()*r*0.5;
-	var x0,y0, lastAngle;
-	if (avoidCollidersList.length == 0) {
-		for (var x=0; x<canvas.width; x+=patchSizeX) {
-			for (var y=0; y<canvas.height; y+=patchSizeY) {
-				context.beginPath();
-				x0 = x+patchSizeX/2 + rng()*patchSizeX;
-				y0 = y+patchSizeY/2 + rng()*patchSizeY;
-								
+function drawGrass(canvas, context, rng, fill, patchSize, r, probability, avoidCollidersList) {
+	var grassLength = document.getElementById("grassLength").value/100.0;
+	var grassDensity = document.getElementById("grassDensity").value/100.0;
+	
+	var patchSizeX = patchSize/grassDensity;
+	var patchSizeY = patchSize/grassDensity;
+	var minR = r*0.2*grassLength;
+	var maxR = (r*0.5+rng()*r*0.5)*grassLength;
+	var x0, y0, lastAngle;
+
+	
+	for (var x=0; x<canvas.width; x+=patchSizeX) {
+		for (var y=0; y<canvas.height; y+=patchSizeY) {
+			context.beginPath();
+			x0 = x+patchSizeX/2 + rng()*patchSizeX;
+			y0 = y+patchSizeY/2 + rng()*patchSizeY;
+			
+			if (avoidCollidersList.length == 0 || !collidesWithPrevious([avoidCollidersList], x0, y0, 1)) {					
 				context.strokeStyle=rgba(10+rng()*25, 110+rng()*110, 20+rng()*25, 250);
 				context.lineWidth = 1;
 				context.moveTo(x0, y0);
 				
 				for (var angle=Math.PI*0; angle<Math.PI*2; angle+=(10.0+rng()*60.0)*Math.PI*2.0/360) {
-					context.lineTo(x0 + maxR*Math.cos(angle), y0 - maxR*Math.sin(angle));
-					context.moveTo(x0 + minR*Math.cos(lastAngle), y0 - minR*Math.sin(lastAngle));
-					lastAngle = angle;
+					if (rng() < probability) {
+						context.lineTo(x0 + maxR*Math.cos(angle), y0 - maxR*Math.sin(angle));
+						context.moveTo(x0 + minR*Math.cos(lastAngle), y0 - minR*Math.sin(lastAngle));
+						lastAngle = angle;
+					}
 				}
 							
 				context.closePath();
 				context.stroke();
 			}
 		}
-	} else {
-		for (var x=0; x<canvas.width; x+=patchSizeX) {
-			for (var y=0; y<canvas.height; y+=patchSizeY) {
-				context.beginPath();
-				x0 = x+patchSizeX/2 + rng()*patchSizeX;
-				y0 = y+patchSizeY/2 + rng()*patchSizeY;
-				
-				if (!collidesWithPrevious([avoidCollidersList], x0, y0, 1)) {					
-					context.strokeStyle=rgba(10+rng()*25, 110+rng()*110, 20+rng()*25, 250);
-					context.lineWidth = 1;
-					context.moveTo(x0, y0);
-					
-					for (var angle=Math.PI*0; angle<Math.PI*2; angle+=(10.0+rng()*60.0)*Math.PI*2.0/360) {
-						context.lineTo(x0 + maxR*Math.cos(angle), y0 - maxR*Math.sin(angle));
-						context.moveTo(x0 + minR*Math.cos(lastAngle), y0 - minR*Math.sin(lastAngle));
-						lastAngle = angle;
-					}
-								
-					context.closePath();
-					context.stroke();
-				}
-			}
-		}
 	}
 }
 
-function drawBackground(canvas, context, rng, fill, patchSize, r, avoidCollidersList) {
+function drawBackground(canvas, context, rng, fill, patchSize, r, probabillity, avoidCollidersList) {
 	if (!document.image)
 		return;
     //
@@ -743,13 +789,13 @@ function drawBackground(canvas, context, rng, fill, patchSize, r, avoidColliders
 	
 	
     if (fill && backgroundNo <= 1) {
-		context.fillStyle=rgba(0.0, 128, 0.0, 255.0);
+		context.fillStyle=rgba(45.0, 35, 20.0, 255.0);
 		context.fillRect(0, 0, canvas.width, canvas.height);
 	}
 	
 	if (backgroundNo == 0) {
 	} else if (backgroundNo == 1) {
-		drawGrass(canvas, context, rng, fill, patchSize, r, avoidCollidersList);
+		drawGrass(canvas, context, rng, fill, patchSize, r, probabillity, avoidCollidersList);
 	} else if (fill) {
 		context.fillStyle = context.createPattern(document.image, "repeat");
 		context.fillRect(0, 0, canvas.width, canvas.height);
@@ -972,17 +1018,19 @@ function run(dt, forceRedraw) {
 	
 	if (!document.redrawNeeded && !forceRedraw)
 		return;
-			
+	
 	var canvas = document.getElementById("canvas");
 	var context = canvas.getContext("2d");
 	
 	context.save();
 	context.scale(document.scale, document.scale);
 	
+	
 	var seed = document.getElementById("seed").value;
 	rng = createRNG(seed);
-
-	drawBackground(canvas, context, rng, true, 10, 30, []);
+	
+	var grassSpread = document.getElementById("grassSpread").value/100.0;
+	drawBackground(canvas, context, rng, true, 10, 30, 1-grassSpread, []);
 	
 	var gridType = Math.round(document.getElementById("gridType").value);
 	var gridSize = Math.round(document.getElementById("gridSize").value);
@@ -1008,6 +1056,8 @@ function run(dt, forceRedraw) {
 	var clearingSize = document.getElementById("clearingSize").value * 0.01;
 	var treeSteps = document.getElementById("treeSteps").value;
 	var showColliders = document.getElementById("showColliders").value;
+	
+	
 	var stepsNo,angleSteps;
 	//rng();
 	var i=0;
@@ -1067,7 +1117,8 @@ function run(dt, forceRedraw) {
 		}
 	}
 	
-	drawBackground(canvas, context, rng, false, 21, 20, listOfCirclesForRiver);
+	rng = createRNG(seed);
+	drawBackground(canvas, context, rng, false, 10, 30, grassSpread, listOfCirclesForRiver);
 
 	if (gridType > 0)
 		drawRectGrid(canvas, context, gridSize, gridOpacity);
@@ -1148,5 +1199,5 @@ function run(dt, forceRedraw) {
 	
 	context.restore();
 	
-	document.redrawNeeded = false;
+	setRedrawNeeded(false);
 }

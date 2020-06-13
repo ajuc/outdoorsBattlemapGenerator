@@ -18,3 +18,9 @@ input {
 	font-size: 1em;
 	height: 1em;
 }
+.redrawIndicator {
+	display.style: "fixed";
+	font-size: 10em;
+	width: 300px;
+	height: 300px;
+}

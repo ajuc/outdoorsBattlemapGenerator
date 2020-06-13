@@ -105,6 +105,18 @@
 		</p>
 		<p>
 			<span>
+				<label>grass length</label>
+				<input type="range" min="1" max="200" class="slider" id="grassLength"></input>
+			</span>
+			<span>
+				<label>grass density</label>
+				<input type="range" min="1" max="200" class="slider" id="grassDensity"></input>
+			</span>
+			<span>
+				<label>grass spread</label>
+				<input type="range" min="0" max="100" class="slider" id="grassSpread"></input>
+			</span>
+			<span>
 				<label>color rand.</label>
 				<input type="range" min="0" max="100" class="slider" id="colorRandomness"></input>
 			</span>
@@ -132,6 +144,7 @@
 		
 		<!-- <button id="clearStorage">Clear storage</button> -->
 	</p>
+	<div id="redrawIndicator">REDRAWING ... </div>
 	<canvas id="canvas" width="200" height="200">
 	</canvas>
 	<script src="js/bezier.js"></script>
