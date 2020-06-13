@@ -280,11 +280,11 @@ function createExportTemplate(mapOriginInTiles, mapSizeInTiles, pixelsPerTile) {
 }
 
 function exportDd2vtt() {
-	var gridSize = Math.round(document.getElementById("gridSize").value);
+	var pixelsPerTile = 2*Math.round(document.getElementById("gridSize").value);
 	var width = document.getElementById("width").value;
 	var height = document.getElementById("height").value;
 	
-	var exportObject = createExportTemplate([0,0], [Math.ceil(width/gridSize), Math.ceil(height/gridSize)], gridSize);
+	var exportObject = createExportTemplate([0,0], [Math.ceil(width/pixelsPerTile), Math.ceil(height/pixelsPerTile)], pixelsPerTile);
 	var canvas = document.getElementById("canvas");
 	var img = canvas.toDataURL("image/png");
 	
@@ -293,9 +293,9 @@ function exportDd2vtt() {
 		var colliderRepresentation = [];
 		var colliderPoints = getPolygonVertices(collider);
 		for (var point of colliderPoints) {
-			colliderRepresentation.push({"x": point[0]/gridSize, "y": point[1]/gridSize});
+			colliderRepresentation.push({"x": point[0]/pixelsPerTile, "y": point[1]/pixelsPerTile});
 		}
-		colliderRepresentation.push({"x": colliderPoints[0][0]/gridSize, "y": colliderPoints[0][1]/gridSize});
+		colliderRepresentation.push({"x": colliderPoints[0][0]/pixelsPerTile, "y": colliderPoints[0][1]/pixelsPerTile});
 		exportObject.line_of_sight.push(colliderRepresentation);
 	}
 	var result = JSON.stringify(exportObject);
