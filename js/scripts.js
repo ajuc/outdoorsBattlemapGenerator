@@ -106,8 +106,8 @@ function getParameterDefaultValue(name) {
 		"gridType": 1,
 		"gridSize": 32,
 		"gridOpacity": 30,
-		"width": 1920,
-		"height": 1080,
+		"width": 1024,
+		"height": 1024,
 		"seed": 1,
 		"treeDensity": 40,
 		"stoneDensity": 40,
@@ -579,7 +579,7 @@ function drawHexGrid(canvas, context, radius, gridOpacity) {
 	var hexH = radius * 2.0;
 	var dx = 0;
 	var dy = 0;
-	for (y0=-radius*15.0/32.0; y0<canvas.height+hexH; y0+=hexH + dy * 2) {
+	for (y0=-radius*32.0/64.0; y0<canvas.height+hexH; y0+=hexH + dy * 2) {
 		if (dx <= 0) {
 			dx = hexW/2;
 			dy = - hexH/4;
@@ -587,7 +587,7 @@ function drawHexGrid(canvas, context, radius, gridOpacity) {
 			dx = 0;
 			dy = 0;
 		}
-		for (x0=-radius*26.0/32.0; x0<canvas.width+hexW; x0+=hexW) {
+		for (x0=-radius*15.0/64.0; x0<canvas.width+hexW; x0+=hexW) {
 			context.moveTo(dx + x0 - hexW/2, dy + y0 - hexH/4);
 			context.lineTo(dx + x0         , dy + y0 -  hexH/2);
 			context.lineTo(dx + x0 + hexW/2, dy + y0 -  hexH/4);
@@ -673,8 +673,8 @@ function drawStone(canvas, context, x, y, r, rng, colorRandomness, fillOpacity) 
 function drawBackground(canvas, context, rng) {
 	if (!document.image)
 		return;
-    context.fillStyle = context.createPattern(document.image, "repeat");
-    //context.fillStyle=rgba(0.0, 0.9, 0.0, 1.0);
+    //context.fillStyle = context.createPattern(document.image, "repeat");
+    context.fillStyle=rgba(0.0, 128, 0.0, 128.0);
 	context.fillRect(0, 0, canvas.width, canvas.height);
 }
 
