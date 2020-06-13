@@ -333,12 +333,18 @@ function addListeners() {
 		document.redrawNeeded = true;
 	});
 	document.getElementById("width").addEventListener('change', (event) => {
-		canvas.width = event.target.value;
+		var pixelsPerTile = 2*Math.round(document.getElementById("gridSize").value);
+		var roundedWidth = pixelsPerTile * Math.ceil(event.target.value/pixelsPerTile);
+		document.getElementById("width").value = roundedWidth;
+		canvas.width = roundedWidth;
 		save("width");
 		document.redrawNeeded = true;
 	});
 	document.getElementById("height").addEventListener('change', (event) => {
-		canvas.height = event.target.value;
+		var pixelsPerTile = 2*Math.round(document.getElementById("gridSize").value);
+		var roundedHeight = pixelsPerTile * Math.ceil(event.target.value/pixelsPerTile);
+		document.getElementById("height").value = roundedHeight;
+		canvas.height = roundedHeight;
 		save("height");
 		document.redrawNeeded = true;
 	});
