@@ -569,21 +569,23 @@ function drawHexGrid(canvas, context, radius, gridOpacity) {
 	context.beginPath();
 	context.strokeStyle = rgba(0, 0, 0, gridOpacity);
 	context.moveTo(0,0);
+	var hexW = radius * Math.sqrt(3.0);
+	var hexH = radius * 2.0;
 	var dx = 0;
 	var dy = 0;
-	for (y0=0; y0<canvas.height+radius*2; y0+=(radius * 2) + dy * 2) {
+	for (y0=0; y0<canvas.height+hexH; y0+=hexH + dy * 2) {
 		if (dx <= 0) {
-			dx = radius;
-			dy = - radius/2;
+			dx = hexW/2;
+			dy = - hexH/4;
 		} else {
 			dx = 0;
 			dy = 0;
 		}
-		for (x0=0; x0<canvas.width+radius*2; x0+=(radius * 2)) {
-			context.moveTo(dx + x0 - radius, dy + y0 - radius/2);
-			context.lineTo(dx + x0         , dy + y0 - radius);
-			context.lineTo(dx + x0 + radius, dy + y0 - radius/2);
-			context.lineTo(dx + x0 + radius, dy + y0 + radius/2);
+		for (x0=0; x0<canvas.width+hexW; x0+=hexW) {
+			context.moveTo(dx + x0 - hexW/2, dy + y0 - hexH/4);
+			context.lineTo(dx + x0         , dy + y0 -  hexH/2);
+			context.lineTo(dx + x0 + hexW/2, dy + y0 -  hexH/4);
+			context.lineTo(dx + x0 + hexW/2, dy + y0 +  hexH/4);
 			//context.lineTo(dx + x0         , dy + y0 + radius);
 			//context.lineTo(dx + x0 - radius, dy + y0 + radius/2);
 		}
