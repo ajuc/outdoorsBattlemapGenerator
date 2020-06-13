@@ -26,38 +26,51 @@ var listOfCirclesForClearings = [];
 var listOfCirclesForTrees = [];
 
 var backgroundBuffer;
+var backgroundPatternBuffer;
 var riverBuffer;
 var stonesBuffer;
 var twigsBuffer;
 var backgroundCoverBuffer;
 var treesBuffer;
 
-function removeIfExists(offscreenCanvas) {
-	if (offscreenCanvas) {
-		document.removeChild(backgroundBuffer);
-		delete offscreenCanvas;
+function removeIfExists(offScreenCanvas) {
+	if (offScreenCanvas) {
+		//document.removeChild(offScreenCanvas);
+		delete offScreenCanvas;
 	}
 	return null;
 }
 
+function createOffscreenBuffer(w, h) {
+	var offScreenCanvas = document.createElement('canvas');
+	offScreenCanvas.width = w;
+	offScreenCanvas.height = h;
+	return offScreenCanvas;
+}
+
 function recreateBuffersFrom(canvas) {
-	backgroundBuffer = removeIfExists(backgroundBuffer);
-	backgroundBuffer = createOffscreenBuffer(canvas);
+	console.info("recreateBuffersFrom w="+canvas.width+" h="+canvas.height);
 	
+	backgroundPatternBuffer = removeIfExists(backgroundPatternBuffer);
+	backgroundPatternBuffer = createOffscreenBuffer(128, 128);
+
+	backgroundBuffer = removeIfExists(backgroundBuffer);
+	backgroundBuffer = createOffscreenBuffer(canvas.width, canvas.height);
+		
 	riverBuffer = removeIfExists(riverBuffer);
-	riverBuffer = createOffscreenBuffer(canvas);
+	riverBuffer = createOffscreenBuffer(canvas.width, canvas.height);
 	
 	stonesBuffer = removeIfExists(stonesBuffer);
-	stonesBuffer = createOffscreenBuffer(canvas);
+	stonesBuffer = createOffscreenBuffer(canvas.width, canvas.height);
 	
 	twigsBuffer = removeIfExists(twigsBuffer);
-	twigsBuffer = createOffscreenBuffer(canvas);
+	twigsBuffer = createOffscreenBuffer(canvas.width, canvas.height);
 	
 	backgroundCoverBuffer = removeIfExists(backgroundCoverBuffer);
-	backgroundCoverBuffer = createOffscreenBuffer(canvas);
+	backgroundCoverBuffer = createOffscreenBuffer(canvas.width, canvas.height);
 	
 	treesBuffer = removeIfExists(treesBuffer);
-	treesBuffer = createOffscreenBuffer(canvas);
+	treesBuffer = createOffscreenBuffer(canvas.width, canvas.height);
 }
 
 function init()
@@ -82,12 +95,12 @@ function init()
 	var context = canvas.getContext("2d");
 	
 	saveParametersToLocalStorage();
-	
+	setRedrawNeeded(true, allRedraws());
     if( canvas.getContext )
     {
         if (typeof (canvas.getContext) !== undefined) {
 			document.forceRedraw = true;
-			run(0);
+			run();
 		}
     }
 }
@@ -166,12 +179,12 @@ function getParameterDefaultValue(name) {
 		"colorRandomness": 30,
 		"clearings": 9,
 		"clearingSize": 30,
-		"treeSteps": 3,
+		"treeSteps": 2,
 		"backgroundNo": 1,
 		"showColliders": 0,
 		"grassLength": 45,
 		"grassDensity": 50,
-		"grassSpread": 50,
+		"grassSpread": 15,
 		"autoredraw": true
 	};
 	return defaults[name];
@@ -199,8 +212,8 @@ function onlyRedrawsAfter(name) {
 	var alreadyPassed = false;
 	var result = {};
 	for (var n of ["background", "river", "clearings", "stones", "twigs", "backgroundCover", "grid", "trees"]) {
-		if (n === name) {
-			alreadyPasssed = true;
+		if (n == name) {
+			alreadyPassed = true;
 		}
 		result[n] = alreadyPassed;
 	}
@@ -269,7 +282,7 @@ function getParameterRandomizeFunction(name) {
 		"showColliders": null,
 		"grassLength": function () { return Math.round(25 + Math.random() * 50); },
 		"grassDensity": function () { return Math.round(25 + Math.random() * 50); },
-		"grassSpread": function () { return Math.round(25 + Math.random() * 50); },
+		"grassSpread": function () { return Math.round(5 + Math.random() * 25); },
 		"autoredraw": null
 	};
 	return functions[name];
@@ -307,11 +320,6 @@ function backgroundChanged(backgroundNo) {
 	//document.image.crossOrigin = "Anonymous";
 }
 
-function createOffscreenBuffer(canvas) {
-	var offscreenCanvas = document.createElement('canvas');
-	offscreenCanvas.width = canvas.width;
-	offscreenCanvas.height = canvas.height;
-}
 
 function createPolygonFromCircle(x, y, radius) {
 	const sides = 8;
@@ -455,7 +463,7 @@ function addListeners() {
 		// clearStorage();
 	// });
 	document.image.addEventListener('load', (event) => {
-		console.warn("loaded");
+		console.info("loaded");
 		setRedrawNeeded(true, allRedraws());
 	});
 	document.getElementById("width").addEventListener('change', (event) => {
@@ -740,13 +748,6 @@ function drawHexGrid(canvas, context, radius, gridOpacity) {
 	context.stroke();
 }
 
-/* function createRNG(seed) {
-	var state = seed;
-    return function () {
-		state = (1103515245.0 * state + 12345.0) % 0x80000000;
-		return state - Math.floor(state);
-	}
-} */
 function createRNG(seed) {
   var modulus = 2147483648;
   var a = 1103515245;
@@ -758,21 +759,6 @@ function createRNG(seed) {
     return state/modulus;
   };
 }
-
-/*function collidesWithPrevious(lists, x, y, r) {
-	var i, j;
-	var list;
-	var collides;
-	for (j=0; j<lists.length; j++) {	
-		list = lists[j];
-		for (i=0; i<list.length; i++) {
-			collides = (list[i].x - x)*(list[i].x - x) + (list[i].y - y)*(list[i].y - y) < (list[i].r + r)*(list[i].r + r);
-			if (collides)
-				return true;
-		}
-	}
-	return false;
-}*/
 
 function collidesWithPrevious(lists, x, y, r) {
 	var i, j;
@@ -810,26 +796,48 @@ function drawStone(canvas, context, x, y, r, rng, colorRandomness, fillOpacity) 
 	context.fill();
 }
 
-/*
-function drawBackground(canvas, context, rng) {
-	if (!document.image)
-		return;
-    //context.fillStyle = context.createPattern(document.image, "repeat");
-    context.fillStyle=rgba(0.0, 128, 0.0, 128.0);
-	context.fillRect(0, 0, canvas.width, canvas.height);
-}
-*/
-
-function drawGrass(canvas, context, rng, fill, patchSize, r, probability, avoidCollidersList) {
+function drawGrassPattern(canvas, context, rng, fill, patchSize, r, probability, avoidCollidersList) {
 	var grassLength = document.getElementById("grassLength").value/100.0;
-	var grassDensity = document.getElementById("grassDensity").value/200.0;
+	var grassDensity = document.getElementById("grassDensity").value/100.0;
 	
 	var patchSizeX = patchSize/grassDensity;
 	var patchSizeY = patchSize/grassDensity;
 	var minR = r*0.2*grassLength;
 	var maxR = (r*0.5+rng()*r*0.5)*grassLength;
 	var x0, y0, lastAngle;
+	var margin = 0.2;
+	
+	for (var x=canvas.width*margin; x<canvas.width*(1-margin); x+=patchSizeX) {
+		for (var y=canvas.height*margin; y<canvas.height*(1-margin); y+=patchSizeY) {
+			context.beginPath();
+			x0 = x+patchSizeX/2 + rng()*patchSizeX;
+			y0 = y+patchSizeY/2 + rng()*patchSizeY;
+			
+			if (avoidCollidersList.length == 0 || !collidesWithPrevious([avoidCollidersList], x0, y0, 1)) {					
+				context.strokeStyle=rgba(10+rng()*25, 110+rng()*110, 20+rng()*25, 250);
+				context.lineWidth = 1;
+				
+				for (var angle=Math.PI*0; angle<Math.PI*2; angle+=(10.0+rng()*60.0)*Math.PI*2.0/360) {
+					context.moveTo(x0, y0);
+					context.lineTo(x0 + maxR*Math.cos(angle), y0 - maxR*Math.sin(angle));
+				}
+				
+			}
+			context.closePath();
+			context.stroke();
+		}
+	}
+}
 
+function drawGrass(canvas, context, rng, fill, patchSize, r, probability, avoidCollidersList) {
+	var grassLength = document.getElementById("grassLength").value/100.0;
+	var grassDensity = document.getElementById("grassDensity").value/100.0;
+	
+	var patchSizeX = patchSize/grassDensity;
+	var patchSizeY = patchSize/grassDensity;
+	var minR = r*0.2*grassLength;
+	var maxR = (r*0.5+rng()*r*0.5)*grassLength;
+	var x0, y0, lastAngle;
 	
 	for (var x=0; x<canvas.width; x+=patchSizeX) {
 		for (var y=0; y<canvas.height; y+=patchSizeY) {
@@ -841,7 +849,7 @@ function drawGrass(canvas, context, rng, fill, patchSize, r, probability, avoidC
 				context.strokeStyle=rgba(10+rng()*25, 110+rng()*110, 20+rng()*25, 250);
 				context.lineWidth = 1;
 				
-				for (var angle=Math.PI*0; angle<Math.PI*2; angle+=(10.0+rng()*60.0)*Math.PI*2.0/360) {
+				for (var angle=Math.PI*0; angle<Math.PI*2; angle+=(90.0+rng()*60.0)*Math.PI*2.0/360) {
 					if (rng() < probability) {
 						context.moveTo(x0, y0);
 						context.lineTo(x0 + maxR*Math.cos(angle), y0 - maxR*Math.sin(angle));
@@ -855,12 +863,40 @@ function drawGrass(canvas, context, rng, fill, patchSize, r, probability, avoidC
 	}
 }
 
-function drawBackground(canvas, context, rng, fill, patchSize, r, probabillity, avoidCollidersList) {
+function makeBufferTileable(canvas, context) {
+	var tempCanvas=document.createElement("canvas");
+	var tempCtx=tempCanvas.getContext("2d");
+	tempCanvas.width=canvas.width;
+	tempCanvas.height=canvas.height;
+	
+	tempCtx.drawImage(canvas,0,0);
+	
+	context.save();
+	context.translate(0, canvas.height);
+	context.scale(1,-1);
+	context.drawImage(tempCanvas,0,0);
+	context.restore();
+	
+	context.save();
+	context.translate(canvas.width, 0);
+	context.scale(-1,1);
+	context.drawImage(tempCanvas,0,0);
+	context.restore();
+	
+	context.save();
+	context.translate(canvas.width, canvas.height);
+	context.scale(-1,-1);
+	context.drawImage(tempCanvas,0,0);
+	context.restore();
+	
+	delete tmpCts;
+}
+
+function drawBackground(canvas, context, rng, fill, patchSize, r, probabillity, patternSize, excludeMaskBuffer, avoidCollidersList) {
 	if (!document.image)
 		return;
     //
 	var backgroundNo = document.getElementById("backgroundNo").value;
-	
 	
     if (fill && backgroundNo <= 1) {
 		context.fillStyle=rgba(45.0, 35, 20.0, 255.0);
@@ -869,7 +905,25 @@ function drawBackground(canvas, context, rng, fill, patchSize, r, probabillity, 
 	
 	if (backgroundNo == 0) {
 	} else if (backgroundNo == 1) {
-		drawGrass(canvas, context, rng, fill, patchSize, r, probabillity, avoidCollidersList);
+		if (document.redrawNeededDetails["background"]) {
+			var backgroundPatternBufferContext = backgroundPatternBuffer.getContext("2d");
+			cleanOffscreenCanvas(backgroundPatternBuffer, backgroundPatternBufferContext);
+			drawGrassPattern(backgroundPatternBuffer, backgroundPatternBufferContext, rng, fill, patchSize, r, probabillity, avoidCollidersList);
+			//makeBufferTileable(backgroundPatternBuffer, backgroundPatternBufferContext);
+		}
+		for (var x=0; x<canvas.width; x+=patternSize) {
+			for (var y=0; y<canvas.height; y+=patternSize) {
+				var size = (1-probabillity)+rng()*probabillity;
+				if (avoidCollidersList.length == 0 || !collidesWithPrevious([avoidCollidersList], x, y, patternSize*3.5*size)) {
+					context.save();
+					context.translate(x, y);
+					context.rotate(rng()*2.0*Math.PI);
+					context.scale(size, size);
+					context.drawImage(backgroundPatternBuffer, 0, 0);
+					context.restore();
+				}
+			}
+		}	
 	} else if (fill) {
 		context.fillStyle = context.createPattern(document.image, "repeat");
 		context.fillRect(0, 0, canvas.width, canvas.height);
@@ -1087,9 +1141,21 @@ function callRngNTimesToBalancePaths(n) {
 	}
 }
 
-function run(dt) {
+function copyOnScreen(offScreenCanvas, onScreenCanvas, onScreenContext) {
+	onScreenContext.drawImage(offScreenCanvas, 0, 0);
+}
+
+function cleanOffscreenCanvas(canvas, context) {
+	context.save();
+	context.globalCompositeOperation="destination-out";
+	context.fillStyle=rgba(0, 0, 0, 1);
+	context.fillRect(0, 0, canvas.width, canvas.height);
+	context.globalCompositeOperation="source-over";
+	context.restore();
+}
+function run() {
 	window.requestAnimationFrame(run);
-	
+		
 	if (!document.redrawNeeded && !document.forceRedraw)
 		return;
 	
@@ -1111,7 +1177,12 @@ function run(dt) {
 	rng = createRNG(seed);
 	
 	var grassSpread = document.getElementById("grassSpread").value/100.0;
-	drawBackground(canvas, context, rng, true, 10, 30, 1-grassSpread, []);
+	var backgroundBufferContext = backgroundBuffer.getContext("2d");
+	if (document.redrawNeededDetails["background"]) {
+		cleanOffscreenCanvas(backgroundBuffer, backgroundBufferContext);
+		drawBackground(backgroundBuffer, backgroundBufferContext, rng, true, 8, 30, 0.0, 32, null, []);
+	}
+	copyOnScreen(backgroundBuffer, canvas, context);
 	
 	var gridType = Math.round(document.getElementById("gridType").value);
 	var gridSize = Math.round(document.getElementById("gridSize").value);
@@ -1143,35 +1214,47 @@ function run(dt) {
 	//rng();
 	var i=0;
 	
-	listOfCirclesForRiver = [];
+	
 	listOfCirclesForClearings = [];
-	listOfCirclesForTrees = [];
+	
 	
 	var x0, y0, r0;
-	
-	if (riverSize > 0) {
-		rng = createRNG(seed);
-		
-		var alpha = rng()*2*Math.PI;
-		var beta = alpha + Math.PI*0.5 + rng()*Math.PI;
-		var angles = [alpha, beta];
-		var midpoints = [{x:rng() * canvas.width, y:rng() * canvas.height}];
-		var widths = [Math.round(3*riverSize*(1+rng())), Math.round(3*riverSize*(1+rng()))];
 
-		drawRiver(canvas, context, angles, midpoints, widths, serrationAmplitude, serrationFrequency, serrationRandomness, rng, listOfCirclesForRiver, treeColor, 0, 0, 200);
+	var riverBufferContext = riverBuffer.getContext("2d");
+	if (document.redrawNeededDetails["river"]) {
+		listOfCirclesForRiver = [];
+		cleanOffscreenCanvas(riverBuffer, riverBufferContext);
+	}
+	if (riverSize > 0) {
+		if (document.redrawNeededDetails["river"]) {
+			rng = createRNG(seed);
+			var alpha = rng()*2*Math.PI;
+			var beta = alpha + Math.PI*0.5 + rng()*Math.PI;
+			var angles = [alpha, beta];
+			var midpoints = [{x:rng() * riverBuffer.width, y:rng() * riverBuffer.height}];
+			var widths = [Math.round(3*riverSize*(1+rng())), Math.round(3*riverSize*(1+rng()))];
+
+			drawRiver(riverBuffer, riverBufferContext, angles, midpoints, widths, serrationAmplitude, serrationFrequency, serrationRandomness, rng, listOfCirclesForRiver, treeColor, 0, 0, 200);
+		}
+		copyOnScreen(riverBuffer, canvas, context);
 	}
 	
-	rng = createRNG(seed);
-	for (i=0; i<howMuchStones * 1; i++) {
-		var xs = rng() * canvas.width;
-		var ys = rng() * canvas.height;
-		var rs = 5 + rng() * 9;
-		if (!collidesWithPrevious([listOfCirclesForRiver], xs, ys, 1)) {
-			drawStone(canvas, context, xs, ys, rs, rng, colorRandomness, treeColor);
-		} else {
-			callRngNTimesToBalancePaths(4);
+	var stonesBufferContext = stonesBuffer.getContext("2d");
+	if (document.redrawNeededDetails["stones"]) {
+		cleanOffscreenCanvas(stonesBuffer, stonesBufferContext);
+		rng = createRNG(seed);
+		for (i=0; i<howMuchStones * 1; i++) {
+			var xs = rng() * canvas.width;
+			var ys = rng() * canvas.height;
+			var rs = 5 + rng() * 9;
+			if (!collidesWithPrevious([listOfCirclesForRiver], xs, ys, 1)) {
+				drawStone(stonesBuffer, stonesBufferContext, xs, ys, rs, rng, colorRandomness, treeColor);
+			} else {
+				callRngNTimesToBalancePaths(4);
+			}
 		}
 	}
+	copyOnScreen(stonesBuffer, canvas, context);
 	
 	
 	rng = createRNG(seed);
@@ -1179,88 +1262,105 @@ function run(dt) {
 		x0 = rng() * canvas.width;
 		y0 = rng() * canvas.height;
 		r0 = canvas.height * 0.4 * 0.5*(1 + rng()) * clearingSize;
-		//listOfCirclesForClearings.push({x:x0, y:y0, r:r0});
 		addCircleToListOfColliders(listOfCirclesForClearings, x0, y0, r0);
 	}
 	
-	rng = createRNG(seed);
-	for (i=0; i<howMuchTwigs * 0.125; i++) {
-		let ignore = rng();
-		let yt = rng() * canvas.height;
-		let len = 10 + rng() * 16;
-		let width = 1 + rng() * 3;
-		
-		let xt = rng() * canvas.width;
-		if (!collidesWithPrevious([listOfCirclesForRiver, listOfCirclesForClearings], xt, yt, 5)) {
-			drawTwigs(canvas, context, xt, yt, len, width, rng()*Math.PI*2, treeColor, rng);
-		} else {
-			callRngNTimesToBalancePaths(4);
+	
+	var twigsBufferContext = twigsBuffer.getContext("2d");
+	if (document.redrawNeededDetails["twigs"]) {
+		cleanOffscreenCanvas(twigsBuffer, twigsBufferContext);
+		rng = createRNG(seed);
+		for (i=0; i<howMuchTwigs * 0.125; i++) {
+			let ignore = rng();
+			let yt = rng() * twigsBuffer.height;
+			let len = 10 + rng() * 16;
+			let width = 1 + rng() * 3;
+			
+			let xt = rng() * twigsBuffer.width;
+			if (!collidesWithPrevious([listOfCirclesForRiver, listOfCirclesForClearings], xt, yt, 5)) {
+				drawTwigs(twigsBuffer, twigsBufferContext, xt, yt, len, width, rng()*Math.PI*2, treeColor, rng);
+			} else {
+				callRngNTimesToBalancePaths(4);
+			}
 		}
 	}
+	copyOnScreen(twigsBuffer, canvas, context);
+	
 	
 	rng = createRNG(seed);
-	drawBackground(canvas, context, rng, false, 10, 30, grassSpread, listOfCirclesForRiver);
+	var backgroundCoverBufferContext = backgroundCoverBuffer.getContext("2d");
+	if (document.redrawNeededDetails["backgroundCover"]) {
+		cleanOffscreenCanvas(backgroundCoverBuffer, backgroundCoverBufferContext);
+		drawBackground(backgroundCoverBuffer, backgroundCoverBufferContext, rng, false, 10*(1/grassSpread), 30, 0.6, 40, riverBuffer, listOfCirclesForRiver);
+	}
+	copyOnScreen(backgroundCoverBuffer, canvas, context);
 
 	if (gridType > 0)
 		drawRectGrid(canvas, context, gridSize, gridOpacity);
 	else if (gridType < 0)
 		drawHexGrid(canvas, context, gridSize, gridOpacity);
 	
-	rng = createRNG(seed);
-	var treePositions = [];
-	for (i=0; i<howMuchTrees; i++) {
-		treePositions.push([
-			rng() * canvas.width,
-			rng() * canvas.height,
-			treeSize * (1 + rng()),
-			Math.round(treeSteps*(0.75+rng())),
-			Math.round(360+120*rng())
-		]);
-	}
-	for (i=0; i<howMuchTrees; i++) {
-		rng = createRNG(1.0*seed + x0*11 + y0*17);
-		x0 = treePositions[i][0];
-		y0 = treePositions[i][1];
-		r0 = treePositions[i][2];
-		stepsNo = treePositions[i][3];
-		angleSteps = treePositions[i][4];
-		if (!collidesWithPrevious([listOfCirclesForRiver, listOfCirclesForClearings, listOfCirclesForTrees], x0, y0, r0)) {
-			if (rng() > leavedTreeProportion) {				
-				drawTreeRounded(
-					context, x0, y0, r0*2, centerRandomness, stepsNo, angleSteps,
-					5*serrationAmplitude, 2*serrationAmplitude,
-					7*serrationFrequency, 4*serrationFrequency,
-					0.5*serrationRandomness, 0.14*serrationRandomness,
-					colorRandomness, treeColor,
-					rng,
-					true
-				);
-				//listOfCirclesForTrees.push({x:x0, y:y0, r:r0*4*treeSeparation});
-				addCircleToListOfColliders(listOfCirclesForTrees, x0, y0, r0*4*treeSeparation);
+	var treesBufferContext = treesBuffer.getContext("2d");
+	if (document.redrawNeededDetails["trees"]) {
+		cleanOffscreenCanvas(treesBuffer, treesBufferContext);
+		rng = createRNG(seed);
+		listOfCirclesForTrees = [];
+		var treePositions = [];
+		for (i=0; i<howMuchTrees; i++) {
+			treePositions.push([
+				rng() * treesBuffer.width,
+				rng() * treesBuffer.height,
+				treeSize * (1 + rng()),
+				Math.round(treeSteps*(0.75+rng())),
+				Math.round(360+120*rng())
+			]);
+		}
+		for (i=0; i<howMuchTrees; i++) {
+			rng = createRNG(1.0*seed + x0*11 + y0*17);
+			x0 = treePositions[i][0];
+			y0 = treePositions[i][1];
+			r0 = treePositions[i][2];
+			stepsNo = treePositions[i][3];
+			angleSteps = treePositions[i][4];
+			if (!collidesWithPrevious([listOfCirclesForRiver, listOfCirclesForClearings, listOfCirclesForTrees], x0, y0, r0)) {
+				if (rng() > leavedTreeProportion) {				
+					drawTreeRounded(
+						treesBufferContext, x0, y0, r0*2, centerRandomness, stepsNo, angleSteps,
+						5*serrationAmplitude, 2*serrationAmplitude,
+						7*serrationFrequency, 4*serrationFrequency,
+						0.5*serrationRandomness, 0.14*serrationRandomness,
+						colorRandomness, treeColor,
+						rng,
+						true
+					);
+					//listOfCirclesForTrees.push({x:x0, y:y0, r:r0*4*treeSeparation});
+					addCircleToListOfColliders(listOfCirclesForTrees, x0, y0, r0*4*treeSeparation);
+				} else {
+					drawTreeRounded(
+						treesBufferContext, x0, y0, r0*2, centerRandomness, stepsNo, angleSteps,
+						5*serrationAmplitude, 2*serrationAmplitude,
+						9*serrationFrequency, 4*serrationFrequency,
+						0.6*serrationRandomness, 0.24*serrationRandomness,
+						colorRandomness, treeColor,
+						rng,
+						false
+					);
+					//listOfCirclesForTrees.push({x:x0, y:y0, r:r0*4*treeSeparation});
+					addCircleToListOfColliders(listOfCirclesForTrees, x0, y0, r0*4*treeSeparation);
+				}
 			} else {
-				drawTreeRounded(
-					context, x0, y0, r0*2, centerRandomness, stepsNo, angleSteps,
-					5*serrationAmplitude, 2*serrationAmplitude,
-					9*serrationFrequency, 4*serrationFrequency,
-					0.6*serrationRandomness, 0.24*serrationRandomness,
-					colorRandomness, treeColor,
-					rng,
-					false
-				);
-				//listOfCirclesForTrees.push({x:x0, y:y0, r:r0*4*treeSeparation});
-				addCircleToListOfColliders(listOfCirclesForTrees, x0, y0, r0*4*treeSeparation);
-			}
-		} else {
-			callRngNTimesToBalancePaths(6);
-			var j,k;
-			for (j=0; j<stepsNo; j++) {
-				callRngNTimesToBalancePaths(9);
-				for (k=0; k<360; k += (360.0/120.0)) {
-					callRngNTimesToBalancePaths(1);
+				callRngNTimesToBalancePaths(6);
+				var j,k;
+				for (j=0; j<stepsNo; j++) {
+					callRngNTimesToBalancePaths(9);
+					for (k=0; k<360; k += (360.0/120.0)) {
+						callRngNTimesToBalancePaths(1);
+					}
 				}
 			}
 		}
 	}
+	copyOnScreen(treesBuffer, canvas, context);
 	
 	if (showColliders>0) {
 		for (i=0; i<listOfCirclesForTrees.length; i++) {
