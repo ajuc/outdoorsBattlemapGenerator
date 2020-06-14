@@ -448,6 +448,7 @@ function presets(presetName) {
 	} else if (presetName === "no_trees_long_grass") {
 		result = {"serrationFrequency":"162","treeSize":"39","twigsDensity":"52","leavedTreeProportion":"100","colorRandomness":"0","showColliders":"0","grassDensity":"200","stoneDensity":"155","treeSteps":"2","serrationRandomness":"359","clearingSize":"57","width":"1024","grassLength":"200","clearings":"8","gridType":"-1","treeDensity":"0","height":"1024","grassSpread":"50","backgroundNo":"1","serrationAmplitude":"181","initialized":"true","gridOpacity":"40","riverSize":"5","seed":"48083","centerRandomness":"0","gridSize":"32","treeSeparation":"28","treeColor":"120","autoredraw":"true"};
 	}
+	result["seed"] = Math.round(Math.random()*655536);
 	
 	document.waitWithRedraws = true;
 	for (const [k,v] of Object.entries(result)) {
