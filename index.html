@@ -72,7 +72,7 @@
 			</span>
 			<span>
 				<label>grid size</label>
-				<input type="number"  min="50" max="256" id="gridSize"></input>
+				<input type="number"  min="25" max="256" id="gridSize"></input>
 			</span>
 			<span>
 				<label>grid opacity</label>
@@ -139,16 +139,26 @@
 		</p>
 	</form>
 	<p>
-		<button id="resetParameters">Reset to defaults</button>
+		<button id="resetParameters">Defaults</button>
+		<button id="junglePreset">Jungle Preset</button>
+		<button id="winterPreset">Winter Preset</button>
+		<button id="big_river_round_treesPreset">BigRiver Preset</button>
+		<button id="no_trees_long_grassPreset">NoTrees Preset</button>
+		
+		<button id="exportSettings">Export Settings</button>
+		<button id="importSettings">Import Settings</button>
+		<input type="file" id="importSettingsBrowser" style="position: fixed; top: -100em">
+		
 		<button id="randomizeParameters">Randomize parameters</button>
 		<button id="generate">Generate similar (F5)</button>
+		<button id="exportPng">Export to .png</button>
 		<button id="exportDd2vtt">Export to .dd2vtt</button>
-		<button id="redraw">redraw</button>
+		<button id="redraw">Redraw</button>
 		<!-- <a href="#" class="button" id="download" download="my-file-name.png">Download</a> -->
 		
 		<!-- <button id="clearStorage">Clear storage</button> -->
 	</p>
-	<div id="redrawIndicator">REDRAWING ... </div>
+	<div id="redrawIndicator" font-size="30">REDRAWING ... </div>
 	<canvas id="canvas" width="200" height="200">
 	</canvas>
 	<script src="js/bezier.js"></script>

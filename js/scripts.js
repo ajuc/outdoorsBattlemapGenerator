@@ -431,7 +431,42 @@ function createExportTemplate(mapOriginInTiles, mapSizeInTiles, pixelsPerTile) {
 	};
 }
 
+function presets(presetName) {
+	var result = {};
+	if (presetName === "jungle") {
+		result = {"serrationFrequency":"108","treeSize":"26","twigsDensity":"10","leavedTreeProportion":"5","colorRandomness":"19","showColliders":"0","grassDensity":"200","stoneDensity":"11","treeSteps":"2","serrationRandomness":"100","clearingSize":"34","width":"1024","grassLength":"36","clearings":"14","gridType":"0","treeDensity":"44","height":"1024","grassSpread":"16","backgroundNo":"1","serrationAmplitude":"2000","initialized":"true","gridOpacity":"40","riverSize":"0","seed":"300391","centerRandomness":"30","gridSize":"32","treeSeparation":"53","treeColor":"120","autoredraw":"true"};
+	} else if (presetName === "winter") {
+		result = {"serrationFrequency":"82","treeSize":"39","twigsDensity":"0","leavedTreeProportion":"0","colorRandomness":"0","showColliders":"0","grassDensity":"1","stoneDensity":"0","treeSteps":"5","serrationRandomness":"800","clearingSize":"34","width":"1024","grassLength":"1","clearings":"14","gridType":"0","treeDensity":"44","height":"1024","grassSpread":"1","backgroundNo":"2","serrationAmplitude":"2000","initialized":"true","gridOpacity":"40","riverSize":"0","seed":"300391","centerRandomness":"105","gridSize":"32","treeSeparation":"53","treeColor":"120","autoredraw":"true"};
+	} else if (presetName === "big_river_round_trees") {
+		result = {"serrationFrequency":"162","treeSize":"39","twigsDensity":"52","leavedTreeProportion":"100","colorRandomness":"0","showColliders":"0","grassDensity":"200","stoneDensity":"0","treeSteps":"2","serrationRandomness":"359","clearingSize":"57","width":"1024","grassLength":"24","clearings":"8","gridType":"-1","treeDensity":"172","height":"1024","grassSpread":"50","backgroundNo":"1","serrationAmplitude":"181","initialized":"true","gridOpacity":"40","riverSize":"11","seed":"48083","centerRandomness":"0","gridSize":"32","treeSeparation":"28","treeColor":"120","autoredraw":"true"};
+	} else if (presetName === "no_trees_long_grass") {
+		result = {"serrationFrequency":"162","treeSize":"39","twigsDensity":"52","leavedTreeProportion":"100","colorRandomness":"0","showColliders":"0","grassDensity":"200","stoneDensity":"155","treeSteps":"2","serrationRandomness":"359","clearingSize":"57","width":"1024","grassLength":"200","clearings":"8","gridType":"-1","treeDensity":"0","height":"1024","grassSpread":"50","backgroundNo":"1","serrationAmplitude":"181","initialized":"true","gridOpacity":"40","riverSize":"5","seed":"48083","centerRandomness":"0","gridSize":"32","treeSeparation":"28","treeColor":"120","autoredraw":"true"};
+	}
+	
+	document.waitWithRedraws = true;
+	for (const [k,v] of Object.entries(result)) {
+		window.localStorage.setItem(k, v);
+	}
+	document.waitWithRedraws = false;
+	loadParametersFromLocalStorage();
+	canvas.width = document.getElementById("width").value;
+	canvas.height = document.getElementById("height").value;	
+	recreateBuffersFrom(canvas);
+	setRedrawNeeded(true, allRedraws());
+}
+
+function ensureEndsWith(filename, ending) {
+	if (filename.endsWith(ending)) {
+		return filename
+	} else {
+		return filename+ending;
+	}
+}
+
 function exportDd2vtt() {
+	var filename = prompt("Enter filename for exported map", "exported.dd2vtt");
+	filename = ensureEndsWith(filename, ".dd2vtt");
+	
 	var pixelsPerTile = 2*Math.round(document.getElementById("gridSize").value);
 	var width = document.getElementById("width").value;
 	var height = document.getElementById("height").value;
@@ -454,12 +489,94 @@ function exportDd2vtt() {
 	var blob = new Blob([result], {
     type: "text/plain;charset=utf-8;",
 	});
-	saveAs(blob, "exported.dd2vtt");
+	saveAs(blob, filename);
+}
+
+function exportPng() {
+	var filename = prompt("Enter filename for exported image", "exported.png");
+	filename = ensureEndsWith(filename, ".png");
+	
+	var canvas = document.getElementById("canvas");
+	canvas.toBlob(function(blob) {
+		saveAs(blob, filename);
+	});
+}
+
+function exportSettings() {
+	var filename = prompt("Enter filename for exported settings", "settings.omg");
+	filename = ensureEndsWith(filename, ".omg");
+	
+	var data = window.localStorage;
+	var json = JSON.stringify(data);
+	var blob = new Blob([json], {
+    type: "text/plain;charset=utf-8;",
+	});
+	saveAs(blob, filename);
+}
+
+function importSettings() {
+	var browser = document.getElementById("importSettingsBrowser");
+	browser.click();
+}
+
+function fileForImportSettingsChoosen(event) {
+	console.info("event=" + event);
+	var file = event.target.files[0];
+	file.text().then((t) => {
+		console.info("t=" + t);
+		var data = JSON.parse(t);
+		document.waitWithRedraws = true;
+		for (const [k,v] of Object.entries(data)) {
+			window.localStorage.setItem(k, v);
+		}
+		document.waitWithRedraws = false;
+		loadParametersFromLocalStorage();
+		canvas.width = document.getElementById("width").value;
+		canvas.height = document.getElementById("height").value;	
+		recreateBuffersFrom(canvas);
+		setRedrawNeeded(true, allRedraws());
+	});
+}
+
+function updateSizeWOrH(newValue, name) {
+	var pixelsPerTile = 2*Math.round(document.getElementById("gridSize").value);
+	var rounded = pixelsPerTile * Math.ceil(newValue/pixelsPerTile);
+	document.getElementById(name).value = rounded;
+	console.info(name + " changed to" + rounded);
+	if (name === "width")
+		canvas.width = rounded;
+	else
+		canvas.height = rounded;
+	recreateBuffersFrom(canvas);
+	save(name);
+	setRedrawNeeded(true, allRedraws());
 }
 
 function addListeners() {
 	document.getElementById("resetParameters").addEventListener('click', (event) => {
 		resetParameters();
+	});
+	document.getElementById("junglePreset").addEventListener('click', (event) => {
+		presets("jungle");
+	});
+	document.getElementById("winterPreset").addEventListener('click', (event) => {
+		presets("winter");
+	});
+	document.getElementById("big_river_round_treesPreset").addEventListener('click', (event) => {
+		presets("big_river_round_trees");
+	});
+	document.getElementById("no_trees_long_grassPreset").addEventListener('click', (event) => {
+		presets("no_trees_long_grass");
+	});
+	document.getElementById("exportSettings").addEventListener('click', (event) => {
+		exportSettings();
+	});
+	document.getElementById("importSettings").addEventListener('click', (event) => {
+		importSettings();
+	});
+	document.getElementById("importSettingsBrowser").addEventListener('change', (event) => {
+		var e = event;
+		fileForImportSettingsChoosen(e);
 	});
 	document.getElementById("randomizeParameters").addEventListener('click', (event) => {
 		randomizeParameters();
@@ -471,43 +588,37 @@ function addListeners() {
 	document.getElementById("exportDd2vtt").addEventListener('click', (event) => {
 		exportDd2vtt();
 	});
+	document.getElementById("exportPng").addEventListener('click', (event) => {
+		exportPng();
+	});
 	document.getElementById("redraw").addEventListener('click', (event) => {
 		document.forceRedraw = true;
 		setRedrawNeeded(true, allRedraws());
 	});
-	// document.getElementById("download").addEventListener('click', (event) => {
-		// var canvas = document.getElementById("canvas");
-		// var dataURL = canvas.toDataURL('image/png');
-		// document.getElementById("download").href = dataURL;
-		// document.getElementById("download").click();
-	// });
-	
 	// document.getElementById("clearStorage").addEventListener('click', (event) => {
-		// clearStorage();
+	// clearStorage();
 	// });
 	document.image.addEventListener('load', (event) => {
 		console.info("loaded");
 		setRedrawNeeded(true, allRedraws());
 	});
-	document.getElementById("width").addEventListener('change', (event) => {
-		var pixelsPerTile = 2*Math.round(document.getElementById("gridSize").value);
-		var roundedWidth = pixelsPerTile * Math.ceil(event.target.value/pixelsPerTile);
-		document.getElementById("width").value = roundedWidth;
-		console.info("width changed to" + roundedWidth);
-		canvas.width = roundedWidth;
-		recreateBuffersFrom(canvas);
-		save("width");
+	document.getElementById("seed").addEventListener('change', (event) => {
+		save("seed");
 		setRedrawNeeded(true, allRedraws());
 	});
+	document.getElementById("gridSize").addEventListener('change', (event) => {
+		var gridSize = document.getElementById("gridSize").value;
+		console.info("gridSize=" + gridSize);
+		document.getElementById("width").step = gridSize * 2;
+		document.getElementById("height").step = gridSize * 2;
+		updateSizeWOrH(document.getElementById("width").value, "width");
+		updateSizeWOrH(document.getElementById("height").value, "height");
+	});
+	document.getElementById("width").addEventListener('change', (event) => {
+		updateSizeWOrH(event.target.value, "width");
+	});
 	document.getElementById("height").addEventListener('change', (event) => {
-		var pixelsPerTile = 2*Math.round(document.getElementById("gridSize").value);
-		var roundedHeight = pixelsPerTile * Math.ceil(event.target.value/pixelsPerTile);
-		document.getElementById("height").value = roundedHeight;
-		console.info("height changed to" + roundedHeight);
-		canvas.height = roundedHeight;
-		recreateBuffersFrom(canvas);
-		save("height");
-		setRedrawNeeded(true, allRedraws());
+		updateSizeWOrH(event.target.value, "height");
 	});
 	var parameterNames = getParameterNames();
 	for(var parameterName of parameterNames) {
@@ -772,7 +883,7 @@ function drawHexGrid(canvas, context, radius, gridOpacity) {
 			dx = 0;
 			dy = 0;
 		}
-		for (x0=hexW/2; x0<canvas.width+hexW; x0+=hexW) {
+		for (x0=hexW/2-hexW; x0<canvas.width+hexW; x0+=hexW) {
 			context.moveTo(dx + x0 - hexW/2, dy + y0 - hexH/4);
 			context.lineTo(dx + x0         , dy + y0 -  hexH/2);
 			context.lineTo(dx + x0 + hexW/2, dy + y0 -  hexH/4);
