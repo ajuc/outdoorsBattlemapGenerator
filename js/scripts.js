@@ -666,6 +666,7 @@ function resetParameters() {
 	for(var parameterName of parameterNames) {
 		document.getElementById(parameterName).value = getParameterDefaultValue(parameterName);
 	}
+	document.getElementById("seed").value = Math.round(Math.random()*655536);
 	document.waitWithRedraws = false;
 	//document.forceRedraw = true;
 	canvas.width = document.getElementById("width").value;
