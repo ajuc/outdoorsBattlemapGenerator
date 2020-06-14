@@ -94,6 +94,8 @@ function init()
 	
 	var context = canvas.getContext("2d");
 	
+	document.waitWithRedraws = false;
+	
 	saveParametersToLocalStorage();
 	setRedrawNeeded(true, allRedraws());
     if( canvas.getContext )
@@ -108,11 +110,17 @@ function init()
 function addListener(name) {
 	var neededRedraws = getNeededRedrawsFor(name);
 	document.getElementById(name).addEventListener('change', (event) => {
+		console.info("changed " + name);
 		save(name);
-		setRedrawNeeded(true, neededRedraws);
+		var oldRedraws = document.redrawNeededDetails;
+		var mergedRedraws = mergeRedraws(oldRedraws, neededRedraws);
+		setRedrawNeeded(true, mergedRedraws);
 	});
 	document.getElementById(name).addEventListener('input', (event) => {
-		setRedrawNeeded(true, neededRedraws);
+		console.info("input " + name);
+		var oldRedraws = document.redrawNeededDetails;
+		var mergedRedraws = mergeRedraws(oldRedraws, neededRedraws);
+		setRedrawNeeded(true, mergedRedraws);
 	});
 }
 
@@ -219,6 +227,16 @@ function onlyRedrawsAfter(name) {
 	}
 	return result;
 }
+function mergeRedraws(oldRedraws, newRedraws) {
+	var r = oldRedraws;
+	if (!r) {
+		r = noneRedraws();
+	}
+	for (const [key, value] of Object.entries(newRedraws)) {
+		r[key] = r[key] || value;
+	}
+	return r;
+}
 
 function getNeededRedrawsFor(name) {
 	const functions = {
@@ -312,12 +330,16 @@ function loadParametersFromLocalStorage() {
 }
 
 function backgroundChanged(backgroundNo) {
-	console.warn("loading", backgroundNo);
+	console.warn("backgroundChanged", backgroundNo);
 	save("backgroundNo");
 	if (backgroundNo > 1) {
 		document.image.src = "gfx/pattern_"+backgroundNo+".png";
 	}
 	//document.image.crossOrigin = "Anonymous";
+	var neededRedraws = getNeededRedrawsFor("backgroundNo");
+	var oldRedraws = document.redrawNeededDetails;
+	var mergedRedraws = mergeRedraws(oldRedraws, neededRedraws);
+	setRedrawNeeded(true, mergedRedraws);
 }
 
 
@@ -441,6 +463,7 @@ function addListeners() {
 	});
 	document.getElementById("randomizeParameters").addEventListener('click', (event) => {
 		randomizeParameters();
+		setRedrawNeeded(true, allRedraws());
 	});
 	document.getElementById("generate").addEventListener('click', (event) => {
 		location.reload();
@@ -470,6 +493,7 @@ function addListeners() {
 		var pixelsPerTile = 2*Math.round(document.getElementById("gridSize").value);
 		var roundedWidth = pixelsPerTile * Math.ceil(event.target.value/pixelsPerTile);
 		document.getElementById("width").value = roundedWidth;
+		console.info("width changed to" + roundedWidth);
 		canvas.width = roundedWidth;
 		recreateBuffersFrom(canvas);
 		save("width");
@@ -479,6 +503,7 @@ function addListeners() {
 		var pixelsPerTile = 2*Math.round(document.getElementById("gridSize").value);
 		var roundedHeight = pixelsPerTile * Math.ceil(event.target.value/pixelsPerTile);
 		document.getElementById("height").value = roundedHeight;
+		console.info("height changed to" + roundedHeight);
 		canvas.height = roundedHeight;
 		recreateBuffersFrom(canvas);
 		save("height");
@@ -486,13 +511,18 @@ function addListeners() {
 	});
 	var parameterNames = getParameterNames();
 	for(var parameterName of parameterNames) {
-		if (parameterName != "width" && parameterName != "height") {
+		if (parameterName != "width" && parameterName != "height" && parameterName != "backgroundNo") {
 			addListener(parameterName);
 		}
 	}
 	document.getElementById("backgroundNo").addEventListener('change', (event) => {
 		var backgroundNo = event.target.value;
 		backgroundChanged(backgroundNo);
+		save("backgroundNo");
+		var oldRedraws = document.redrawNeededDetails;
+		var neededRedraws = getNeededRedrawsFor("backgroundNo");
+		var mergedRedraws = mergeRedraws(oldRedraws, neededRedraws);
+		setRedrawNeeded(true, mergedRedraws);
 	});
 }
 
@@ -514,12 +544,19 @@ function clearStorage() {
 
 function resetParameters() {
 	var parameterNames = getParameterNames();
+	document.waitWithRedraws = true;
 	for(var parameterName of parameterNames) {
 		document.getElementById(parameterName).value = getParameterDefaultValue(parameterName);
 	}
-	backgroundChanged(document.getElementById("backgroundNo").value);
-	saveParametersToLocalStorage();
+	document.waitWithRedraws = false;
+	//document.forceRedraw = true;
+	canvas.width = document.getElementById("width").value;
+	canvas.height = document.getElementById("height").value;	
+	recreateBuffersFrom(canvas);
 	setRedrawNeeded(true, allRedraws());
+	saveParametersToLocalStorage();
+//	backgroundChanged(document.getElementById("backgroundNo").value);
+//	setRedrawNeeded(true, allRedraws());
 }
 
 function randomizeParameters() {
@@ -1156,6 +1193,9 @@ function cleanOffscreenCanvas(canvas, context) {
 function run() {
 	window.requestAnimationFrame(run);
 		
+	if (document.waitWithRedraws)
+		return;
+	
 	if (!document.redrawNeeded && !document.forceRedraw)
 		return;
 	
@@ -1169,6 +1209,7 @@ function run() {
 	var canvas = document.getElementById("canvas");
 	var context = canvas.getContext("2d");
 	
+	console.info("run w=" + canvas.width + " h=" + canvas.height + " redraws=" + Object.entries(document.redrawNeededDetails) + " BEGIN");
 	context.save();
 	context.scale(document.scale, document.scale);
 	
@@ -1381,4 +1422,5 @@ function run() {
 	context.restore();
 	
 	setRedrawNeeded(false, noneRedraws());
+	console.info("run w=" + canvas.width + " h=" + canvas.height + " END");
 }
