@@ -183,7 +183,7 @@ function getParameterDefaultValue(name) {
 		"backgroundNo": 1,
 		"showColliders": 0,
 		"grassLength": 45,
-		"grassDensity": 80,
+		"grassDensity": 120,
 		"grassSpread": 45,
 		"autoredraw": true
 	};
