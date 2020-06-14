@@ -83,10 +83,16 @@ function init()
 
 	loadParametersFromLocalStorage();
 	
-	canvas.width = document.getElementById("width").value;
-	canvas.height = document.getElementById("height").value;	
-	recreateBuffersFrom(canvas);
+//	canvas.width = document.getElementById("width").value;
+//	canvas.height = document.getElementById("height").value;	
+//	recreateBuffersFrom(canvas);
 
+	var gridSize = document.getElementById("gridSize").value;
+	document.getElementById("width").step = gridSize * 2;
+	document.getElementById("height").step = gridSize * 2;
+	updateSizeWOrH(document.getElementById("width").value, "width");
+	updateSizeWOrH(document.getElementById("height").value, "height");
+	
 	addListeners();
 	
 	document.getElementById("seed").value = Math.round(Math.random()*655536);
