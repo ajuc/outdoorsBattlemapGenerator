@@ -27,6 +27,7 @@ var listOfCirclesForTrees = [];
 
 var backgroundBuffer;
 var backgroundPatternBuffer;
+var backgroundPatternSmallBuffer;
 var riverBuffer;
 var stonesBuffer;
 var twigsBuffer;
@@ -52,8 +53,11 @@ function recreateBuffersFrom(canvas) {
 	console.info("recreateBuffersFrom w="+canvas.width+" h="+canvas.height);
 	
 	backgroundPatternBuffer = removeIfExists(backgroundPatternBuffer);
-	backgroundPatternBuffer = createOffscreenBuffer(128, 128);
-
+	backgroundPatternBuffer = createOffscreenBuffer(160, 160);
+	
+	backgroundPatternSmallBuffer = removeIfExists(backgroundPatternSmallBuffer);
+	backgroundPatternSmallBuffer = createOffscreenBuffer(64, 64);
+	
 	backgroundBuffer = removeIfExists(backgroundBuffer);
 	backgroundBuffer = createOffscreenBuffer(canvas.width, canvas.height);
 		
@@ -149,6 +153,7 @@ function getParameterNames() {
 		"stoneDensity",
 		"twigsDensity",
 		"riverSize",
+		"roadSize",
 		"centerRandomness",
 		"leavedTreeProportion",
 		"treeSize",
@@ -182,6 +187,7 @@ function getParameterDefaultValue(name) {
 		"stoneDensity": 40,
 		"twigsDensity": 40,
 		"riverSize": 3,
+		"roadSize": 0,
 		"centerRandomness": 20,
 		"leavedTreeProportion": 95,
 		"treeSize": 50,
@@ -196,7 +202,7 @@ function getParameterDefaultValue(name) {
 		"treeSteps": 2,
 		"backgroundNo": 1,
 		"showColliders": 0,
-		"grassLength": 45,
+		"grassLength": 85,
 		"grassDensity": 120,
 		"grassSpread": 45,
 		"autoredraw": true
@@ -256,6 +262,7 @@ function getNeededRedrawsFor(name) {
 		"stoneDensity": onlyOneRedraw("stones"),
 		"twigsDensity": onlyOneRedraw("twigs"),
 		"riverSize": onlyRedrawsAfter("river"),
+		"roadSize": onlyRedrawsAfter("river"),
 		"centerRandomness": onlyOneRedraw("trees"),
 		"leavedTreeProportion": onlyOneRedraw("trees"),
 		"treeSize": onlyOneRedraw("trees"),
@@ -290,6 +297,7 @@ function getParameterRandomizeFunction(name) {
 		"stoneDensity": function () { return Math.round(Math.random() * 20 * Math.random() * 5); },
 		"twigsDensity": function () { return Math.round(Math.random() * 20 * Math.random() * 5); },
 		"riverSize": function () { return Math.random() > 0.5 ? Math.round(Math.random() * 10) : 0; },
+		"roadSize": function () { return Math.random() > 0.5 ? Math.round(Math.random() * 10) : 0; },
 		"centerRandomness": function () { return Math.round(30); },
 		"leavedTreeProportion": function () { return Math.round(Math.random() * 100); },
 		"treeSize": function () { return Math.round(30) + Math.round(Math.random() * 40); },
@@ -440,13 +448,13 @@ function createExportTemplate(mapOriginInTiles, mapSizeInTiles, pixelsPerTile) {
 function presets(presetName) {
 	var result = {};
 	if (presetName === "jungle") {
-		result = {"serrationFrequency":"108","treeSize":"26","twigsDensity":"10","leavedTreeProportion":"5","colorRandomness":"19","showColliders":"0","grassDensity":"200","stoneDensity":"11","treeSteps":"2","serrationRandomness":"100","clearingSize":"34","width":"1024","grassLength":"36","clearings":"14","gridType":"0","treeDensity":"44","height":"1024","grassSpread":"16","backgroundNo":"1","serrationAmplitude":"2000","initialized":"true","gridOpacity":"40","riverSize":"0","seed":"300391","centerRandomness":"30","gridSize":"32","treeSeparation":"53","treeColor":"120","autoredraw":"true"};
+		result = {"serrationFrequency":"108","treeSize":"26","twigsDensity":"10","leavedTreeProportion":"5","colorRandomness":"19","showColliders":"0","grassDensity":"200","stoneDensity":"11","treeSteps":"2","serrationRandomness":"100","clearingSize":"34","width":"1024","grassLength":"56","clearings":"14","gridType":"0","treeDensity":"44","height":"1024","grassSpread":"16","backgroundNo":"1","serrationAmplitude":"2000","initialized":"true","gridOpacity":"40","riverSize":"0","roadSize":"0","seed":"300391","centerRandomness":"30","gridSize":"32","treeSeparation":"53","treeColor":"120","autoredraw":"true"};
 	} else if (presetName === "winter") {
-		result = {"serrationFrequency":"82","treeSize":"39","twigsDensity":"0","leavedTreeProportion":"0","colorRandomness":"0","showColliders":"0","grassDensity":"1","stoneDensity":"0","treeSteps":"5","serrationRandomness":"800","clearingSize":"34","width":"1024","grassLength":"1","clearings":"14","gridType":"0","treeDensity":"44","height":"1024","grassSpread":"1","backgroundNo":"2","serrationAmplitude":"2000","initialized":"true","gridOpacity":"40","riverSize":"0","seed":"300391","centerRandomness":"105","gridSize":"32","treeSeparation":"53","treeColor":"120","autoredraw":"true"};
+		result = {"serrationFrequency":"82","treeSize":"39","twigsDensity":"0","leavedTreeProportion":"0","colorRandomness":"0","showColliders":"0","grassDensity":"1","stoneDensity":"0","treeSteps":"5","serrationRandomness":"800","clearingSize":"34","width":"1024","grassLength":"1","clearings":"14","gridType":"0","treeDensity":"44","height":"1024","grassSpread":"1","backgroundNo":"2","serrationAmplitude":"2000","initialized":"true","gridOpacity":"40","riverSize":"0","roadSize":"0","seed":"300391","centerRandomness":"105","gridSize":"32","treeSeparation":"53","treeColor":"120","autoredraw":"true"};
 	} else if (presetName === "big_river_round_trees") {
-		result = {"serrationFrequency":"162","treeSize":"39","twigsDensity":"52","leavedTreeProportion":"100","colorRandomness":"0","showColliders":"0","grassDensity":"200","stoneDensity":"0","treeSteps":"2","serrationRandomness":"359","clearingSize":"57","width":"1024","grassLength":"24","clearings":"8","gridType":"-1","treeDensity":"172","height":"1024","grassSpread":"50","backgroundNo":"1","serrationAmplitude":"181","initialized":"true","gridOpacity":"40","riverSize":"11","seed":"48083","centerRandomness":"0","gridSize":"32","treeSeparation":"28","treeColor":"120","autoredraw":"true"};
+		result = {"serrationFrequency":"162","treeSize":"39","twigsDensity":"52","leavedTreeProportion":"100","colorRandomness":"0","showColliders":"0","grassDensity":"200","stoneDensity":"0","treeSteps":"2","serrationRandomness":"359","clearingSize":"57","width":"1024","grassLength":"64","clearings":"8","gridType":"-1","treeDensity":"172","height":"1024","grassSpread":"50","backgroundNo":"1","serrationAmplitude":"181","initialized":"true","gridOpacity":"40","riverSize":"11","roadSize":"0","seed":"48083","centerRandomness":"0","gridSize":"32","treeSeparation":"28","treeColor":"120","autoredraw":"true"};
 	} else if (presetName === "no_trees_long_grass") {
-		result = {"serrationFrequency":"162","treeSize":"39","twigsDensity":"52","leavedTreeProportion":"100","colorRandomness":"0","showColliders":"0","grassDensity":"200","stoneDensity":"155","treeSteps":"2","serrationRandomness":"359","clearingSize":"57","width":"1024","grassLength":"200","clearings":"8","gridType":"-1","treeDensity":"0","height":"1024","grassSpread":"50","backgroundNo":"1","serrationAmplitude":"181","initialized":"true","gridOpacity":"40","riverSize":"5","seed":"48083","centerRandomness":"0","gridSize":"32","treeSeparation":"28","treeColor":"120","autoredraw":"true"};
+		result = {"serrationFrequency":"162","treeSize":"39","twigsDensity":"52","leavedTreeProportion":"100","colorRandomness":"0","showColliders":"0","grassDensity":"200","stoneDensity":"155","treeSteps":"2","serrationRandomness":"359","clearingSize":"57","width":"1024","grassLength":"200","clearings":"8","gridType":"-1","treeDensity":"0","height":"1024","grassSpread":"50","backgroundNo":"1","serrationAmplitude":"181","initialized":"true","gridOpacity":"40","riverSize":"5","roadSize":"0","seed":"48083","centerRandomness":"0","gridSize":"32","treeSeparation":"28","treeColor":"120","autoredraw":"true"};
 	}
 	result["seed"] = Math.round(Math.random()*655536);
 	
@@ -921,14 +929,26 @@ function collidesWithPrevious(lists, x, y, r) {
 	var list;
 	var intersection;
 	var collides;
-	var polygon = createPolygonFromCircle(x, y, r*0.9);
+	//var polygon = createPolygonFromCircle(x, y, r*0.9);
+	var points = [new PointF(x, y)];//
+	const N = 4; //how many points on circle to check
+	
+	for (var angle = 0; angle<=Math.PI*2.0; angle += Math.PI*2.0/N) {
+		points.push(new PointF(x + r * Math.cos(angle), y + r * Math.sin(angle)));
+	}
+	
 	for (j=0; j<lists.length; j++) {	
 		list = lists[j];
 		for (i=0; i<list.length; i++) {
-			intersection = polygon.intersection(list[i]);
-			if (intersection.getArea() > 0.01) {
-				return true;
+			for (var k=0; k<points.length; k++) {
+				if (list[i].isPointInside(points[k])) {
+					return true;
+				}
 			}
+			//intersection = polygon.intersection(list[i]);
+			//if (intersection.getArea() > 0.01) {
+			//	return true;
+			//}
 		}
 	}
 	return false;
@@ -952,33 +972,32 @@ function drawStone(canvas, context, x, y, r, rng, colorRandomness, fillOpacity) 
 	context.fill();
 }
 
-function drawGrassPattern(canvas, context, rng, fill, patchSize, r, probability, avoidCollidersList) {
+function drawGrassPattern(canvas, context, rng, grassDensity, patchSize, r, probability, positionRandomness, margin, avoidCollidersList) {
 	var grassLength = document.getElementById("grassLength").value/100.0;
-	var grassDensity = document.getElementById("grassDensity").value/100.0;
 	
 	var patchSizeX = patchSize/grassDensity;
 	var patchSizeY = patchSize/grassDensity;
 	var minR = r*0.2*grassLength;
-	var maxR = (r*0.5+rng()*r*0.5)*grassLength;
+	var maxR = (r*0.5+rng()*r*0.5)*grassLength*0.6;
 	var x0, y0, lastAngle;
-	var margin = 0.2;
+	//var margin = 0.2;
 	
 	for (var x=canvas.width*margin; x<canvas.width*(1-margin); x+=patchSizeX) {
 		for (var y=canvas.height*margin; y<canvas.height*(1-margin); y+=patchSizeY) {
 			context.beginPath();
-			x0 = x+patchSizeX/2 + rng()*patchSizeX;
-			y0 = y+patchSizeY/2 + rng()*patchSizeY;
+			x0 = x+patchSizeX/2 + rng()*patchSizeX*positionRandomness;
+			y0 = y+patchSizeY/2 + rng()*patchSizeY*positionRandomness;
 			
-			if (avoidCollidersList.length == 0 || !collidesWithPrevious([avoidCollidersList], x0, y0, 1)) {					
-				context.strokeStyle=rgba(10+rng()*25, 110+rng()*110, 20+rng()*25, 250);
-				context.lineWidth = 1;
-				
-				for (var angle=Math.PI*0; angle<Math.PI*2; angle+=(10.0+rng()*60.0)*Math.PI*2.0/360) {
-					context.moveTo(x0, y0);
-					context.lineTo(x0 + maxR*Math.cos(angle), y0 - maxR*Math.sin(angle));
-				}
-				
+			//if (avoidCollidersList.length == 0 || !collidesWithPrevious([avoidCollidersList], x0, y0, 1)) {					
+			context.strokeStyle=rgba(10+rng()*25, 110+rng()*110, 20+rng()*25, 250);
+			context.lineWidth = 1;
+			
+			for (var angle=Math.PI*0; angle<Math.PI*2; angle+=(10.0+rng()*60.0)*Math.PI*2.0/360) {
+				context.moveTo(x0, y0);
+				context.lineTo(x0 + maxR*Math.cos(angle), y0 - maxR*Math.sin(angle));
 			}
+				
+			//}
 			context.closePath();
 			context.stroke();
 		}
@@ -1048,11 +1067,12 @@ function makeBufferTileable(canvas, context) {
 	delete tmpCts;
 }
 
-function drawBackground(canvas, context, rng, fill, patchSize, r, probabillity, patternSize, excludeMaskBuffer, avoidCollidersList) {
+function drawBackground(canvas, context, rng, fill, patchSize, r, probabillity, patternSize, excludeMaskBuffer, useSmallPatter, avoidCollidersList) {
 	if (!document.image)
 		return;
     //
 	var backgroundNo = document.getElementById("backgroundNo").value;
+	var grassDensity = document.getElementById("grassDensity").value/100.0;
 	
     if (fill && backgroundNo <= 1) {
 		context.fillStyle=rgba(45.0, 35, 20.0, 255.0);
@@ -1064,18 +1084,40 @@ function drawBackground(canvas, context, rng, fill, patchSize, r, probabillity, 
 		if (document.redrawNeededDetails["background"]) {
 			var backgroundPatternBufferContext = backgroundPatternBuffer.getContext("2d");
 			cleanOffscreenCanvas(backgroundPatternBuffer, backgroundPatternBufferContext);
-			drawGrassPattern(backgroundPatternBuffer, backgroundPatternBufferContext, rng, fill, patchSize, r, probabillity, avoidCollidersList);
-			//makeBufferTileable(backgroundPatternBuffer, backgroundPatternBufferContext);
+			drawGrassPattern(backgroundPatternBuffer, backgroundPatternBufferContext, rng, grassDensity, patchSize, r, probabillity, 0.9, 0.2, []);
+			
+			var backgroundPatternSmallBufferContext = backgroundPatternSmallBuffer.getContext("2d");
+			cleanOffscreenCanvas(backgroundPatternSmallBuffer, backgroundPatternSmallBufferContext);
+			drawGrassPattern(backgroundPatternSmallBuffer, backgroundPatternSmallBufferContext, rng, 2.0, 8, r, probabillity, 0.1, 0.425, []);
 		}
 		for (var x=0; x<canvas.width; x+=patternSize) {
 			for (var y=0; y<canvas.height; y+=patternSize) {
 				var size = (1-probabillity)+rng()*probabillity;
-				if (avoidCollidersList.length == 0 || !collidesWithPrevious([avoidCollidersList], x, y, patternSize*3.5*size)) {
+				var collide = false;
+				var buffer = backgroundPatternBuffer;
+				var collisionSize;
+				//buffer = backgroundPatternBuffer;
+				
+				
+				if (avoidCollidersList.length != 0) {
+					//collisionSize = (buffer.width + buffer.height)*size/1.8;
+					//if (collidesWithPrevious([avoidCollidersList], x, y, collisionSize)) {
+						buffer = backgroundPatternSmallBuffer;
+						collisionSize = (buffer.width + buffer.height)*size/3;
+						if (collidesWithPrevious([avoidCollidersList], x, y, collisionSize)) {
+							collide = true;
+						} else {
+							collide = false;
+						}
+					//}
+				}
+				if (!collide) {
 					context.save();
 					context.translate(x, y);
 					context.rotate(rng()*2.0*Math.PI);
 					context.scale(size, size);
-					context.drawImage(backgroundPatternBuffer, 0, 0);
+					//if (useSmallPatter)
+						context.drawImage(buffer, 0, 0);
 					context.restore();
 				}
 			}
@@ -1100,7 +1142,7 @@ function drawPolygon(canvas, context, polygon) {
 	context.lineWidth = 1;
 }
 
-function drawRiver(canvas, context, angles, midpoints, widths, serrationAmplitude, serrationFrequency, serrationRandomness, rng, outListOfColliders, fillOpacity, r, g, b) {
+function drawRiver(canvas, context, angles, midpoints, widths, serrationAmplitude, serrationFrequency, serrationRandomness, rng, outListOfColliders, fillOpacity, r, g, b, outBezierCurves) {
 	// console.assert(angles.length >= 2 && angles.length <= 3);
 	// console.assert(midpoints.length <= 3);
 	// console.assert(widths.length = angles.length);
@@ -1142,8 +1184,8 @@ function drawRiver(canvas, context, angles, midpoints, widths, serrationAmplitud
 	points.push(pointsOnOuterRing[1]);
 	
 
-	for (widthIndex = 0; widthIndex < widths.length; widthIndex++) {
-	}
+	//for (widthIndex = 0; widthIndex < widths.length; widthIndex++) {
+	//}
 
 	
 	let graph = new Graph("graph");
@@ -1155,6 +1197,7 @@ function drawRiver(canvas, context, angles, midpoints, widths, serrationAmplitud
 		pointsForBezier.push(new Point(points[pointsIndex].x, points[pointsIndex].y));
 	}
 	let bezierCurve = new BezierCurve(pointsForBezier, 4);
+	outBezierCurves.push(bezierCurve);
 	context.lineWidth = 1;
 	context.strokeStyle = rgba(0, 0, 0, 1.0);
 	var rr = r + rng()*16;
@@ -1167,8 +1210,12 @@ function drawRiver(canvas, context, angles, midpoints, widths, serrationAmplitud
 	//graph.drawCurveFromPoints(canvas, context, bezierCurve.drawingPoints);
 	var t=0.0;
 	var i=0;
+	var riverWidth=0.0;
 	var p,lp, leftX,leftY, rightX, rightY, pLeftX, pLeftY, pRightX, pRightY;
-	for (t=0.0; t<1.0; t+= widths[0]/4096.0) { //
+	for (t=0.0; t<1.0; t+= 10/4096.0) { //
+		
+		riverWidth = widths[0]*(1.0-t)+widths[1]*t;
+		
 		lp = p;
 		pLeftX = leftX;
 		pLeftY = leftY;
@@ -1188,11 +1235,11 @@ function drawRiver(canvas, context, angles, midpoints, widths, serrationAmplitud
 			var d = Math.sqrt(dx*dx+dy*dy);
 			dx/=d;
 			dy/=d;
-			var randomD = rng()*0.3;
-			var leftX = p.x - dy*(5+randomD)* widths[0];
-			var leftY = p.y + dx*(5+randomD)* widths[0];
-			var rightX = p.x + dy*(5+randomD)* widths[0];
-			var rightY = p.y - dx*(5+randomD)* widths[0];
+			var randomD = rng()*4.0/riverWidth;
+			var leftX = p.x - dy*(5+randomD)* riverWidth;
+			var leftY = p.y + dx*(5+randomD)* riverWidth;
+			var rightX = p.x + dy*(5+randomD)* riverWidth;
+			var rightY = p.y - dx*(5+randomD)* riverWidth;
 			
 			if (i % 5 == 0) {
 				rightPointsForColliders.push([pLeftX, pLeftY]);
@@ -1246,6 +1293,72 @@ function drawRiver(canvas, context, angles, midpoints, widths, serrationAmplitud
 	context.fillStyle = rgba(255, 255, 255, 1.0);
 	context.strokeStyle = rgba(0, 0, 0, 1.0);
 }
+
+
+
+function calculateRoadFromRiver(roadSize, angles, midpoints, widths, listOfCirclesForRiver, riverBezierCurve){
+	var p;
+	var collides = false;
+	var lastCollides = false;
+	var firstPThatCollides = undefined;
+	var lastPThatCollides = undefined;
+	
+	if (!riverBezierCurve) {
+		return {
+			angles: angles,
+			widths: [Math.round(3*roadSize), Math.round(3*roadSize)],
+			midpoints: midpoints
+		};
+	}
+	for (var t=0; t<=1.0; t+= 1.0/512.0) {
+		p = riverBezierCurve.calculateNewPoint(t);
+		collides = collidesWithPrevious([listOfCirclesForRiver], p.x, p.y, 1);
+		if (!lastCollides && collides) {
+			firstPThatCollides = p;
+		} else if (lastCollides && !collides) {
+			lastPThatCollides = p;
+			break;
+		}
+		lastCollides = collides;
+	}
+	
+	var middleP = {
+		x: (firstPThatCollides.x + lastPThatCollides.x)/2,
+		y: (firstPThatCollides.y + lastPThatCollides.y)/2,
+	}
+	//riverBezierCurve;
+	
+	var alpha2 = rng()*2*Math.PI;
+	var beta2 = alpha2 + Math.PI*0.5 + rng()*Math.PI;
+	var angles2 = [alpha2, beta2];
+	var midpoints2 = [
+	//{x: firstPThatCollides.x, y: firstPThatCollides.y},
+	//{x: firstPThatCollides.x, y: firstPThatCollides.y},
+	//{x: firstPThatCollides.x, y: firstPThatCollides.y},
+	//{x: lastPThatCollides.x, y: lastPThatCollides.y},
+	//{x: lastPThatCollides.x, y: lastPThatCollides.y},
+	{x: middleP.x, y: middleP.y}
+	];
+			
+	var bridgeRadius=(widths[0]+widths[1])*0.2;
+	//var angles2 = [alpha2-Math.PI/2, alpha+Math.PI/2];
+	var widths2 = [Math.round(3*roadSize), Math.round(3*roadSize)];
+	// var firstSide = {
+	//	x: midpoints[0].x-bridgeRadius*Math.cos(alpha-Math.PI/2),
+	//	y: midpoints[0].y-bridgeRadius*Math.sin(alpha-Math.PI/2)
+	//};
+	//var secondSide = {
+	//	x: midpoints[0].x-bridgeRadius*Math.cos(alpha+Math.PI/2),
+	//	y: midpoints[0].y-bridgeRadius*Math.sin(alpha+Math.PI/2)
+	//};
+	//var midpoints2=[firstSide, /**midpoints[0],**/secondSide];
+	return {
+		angles: angles2,
+		widths: widths2,
+		midpoints: midpoints2
+	};
+}
+
 
 function drawTwigs(canvas, context, x0, y0, len, width, angle, fillOpacity, rng) {
 	var x1 = x0 + Math.cos(angle) * len;
@@ -1309,6 +1422,7 @@ function cleanOffscreenCanvas(canvas, context) {
 	context.globalCompositeOperation="source-over";
 	context.restore();
 }
+
 function run() {
 	window.requestAnimationFrame(run);
 		
@@ -1340,7 +1454,7 @@ function run() {
 	var backgroundBufferContext = backgroundBuffer.getContext("2d");
 	if (document.redrawNeededDetails["background"]) {
 		cleanOffscreenCanvas(backgroundBuffer, backgroundBufferContext);
-		drawBackground(backgroundBuffer, backgroundBufferContext, rng, true, 8, 30, 0.0, 32, null, []);
+		drawBackground(backgroundBuffer, backgroundBufferContext, rng, true, 8, 30, 0.0, 32, null, false, []);
 	}
 	copyOnScreen(backgroundBuffer, canvas, context);
 	
@@ -1353,6 +1467,7 @@ function run() {
 	var howMuchStones = (canvas.width/130 * canvas.height/130) * document.getElementById("stoneDensity").value * 0.1;
 	var howMuchTwigs = (canvas.width/130 * canvas.height/130) * document.getElementById("twigsDensity").value * 0.1;
 	var riverSize = Math.round(document.getElementById("riverSize").value);
+	var roadSize = Math.round(document.getElementById("roadSize").value);
 
 	var centerRandomness = 15.0 * document.getElementById("centerRandomness").value * 0.01;
 	var leavedTreeProportion = document.getElementById("leavedTreeProportion").value * 0.01; //how high percent of the trees are simple
@@ -1385,19 +1500,28 @@ function run() {
 		listOfCirclesForRiver = [];
 		cleanOffscreenCanvas(riverBuffer, riverBufferContext);
 	}
-	if (riverSize > 0) {
+	if (riverSize > 0) { // || roadSize > 0
 		if (document.redrawNeededDetails["river"]) {
 			rng = createRNG(seed);
 			var alpha = rng()*2*Math.PI;
 			var beta = alpha + Math.PI*0.5 + rng()*Math.PI;
 			var angles = [alpha, beta];
 			var midpoints = [{x:rng() * riverBuffer.width, y:rng() * riverBuffer.height}];
-			var widths = [Math.round(3*riverSize*(1+rng())), Math.round(3*riverSize*(1+rng()))];
-
-			drawRiver(riverBuffer, riverBufferContext, angles, midpoints, widths, serrationAmplitude, serrationFrequency, serrationRandomness, rng, listOfCirclesForRiver, treeColor, 0, 0, 200);
+			var widths = [Math.round(3*riverSize*(2+0.5*rng())), Math.round(3*riverSize*(2+0.5*rng()))];
+			var outBezierCurves = [];
+			if (riverSize > 0) {
+				drawRiver(riverBuffer, riverBufferContext, angles, midpoints, widths, serrationAmplitude, serrationFrequency, serrationRandomness, rng, listOfCirclesForRiver, treeColor, 0, 0, 200, outBezierCurves);
+			}
+			
+			//var roadParameters = calculateRoadFromRiver(roadSize, angles, midpoints, widths, listOfCirclesForRiver, outBezierCurves[0]);
+			//if (roadSize > 0) {
+			//	drawRiver(riverBuffer, riverBufferContext, roadParameters.angles, roadParameters.midpoints, roadParameters.widths, //serrationAmplitude, serrationFrequency, serrationRandomness, rng, listOfCirclesForRiver, treeColor, 50, 50, 20, outBezierCurves);
+			//}
 		}
 		copyOnScreen(riverBuffer, canvas, context);
 	}
+	
+	
 	
 	var stonesBufferContext = stonesBuffer.getContext("2d");
 	if (document.redrawNeededDetails["stones"]) {
@@ -1451,7 +1575,7 @@ function run() {
 	var backgroundCoverBufferContext = backgroundCoverBuffer.getContext("2d");
 	if (document.redrawNeededDetails["backgroundCover"]) {
 		cleanOffscreenCanvas(backgroundCoverBuffer, backgroundCoverBufferContext);
-		drawBackground(backgroundCoverBuffer, backgroundCoverBufferContext, rng, false, 10*(1/grassSpread), 30, 0.6, 40, riverBuffer, listOfCirclesForRiver);
+		drawBackground(backgroundCoverBuffer, backgroundCoverBufferContext, rng, false, 12, 30, 0.5, 10/grassSpread, riverBuffer, true, listOfCirclesForRiver);
 	}
 	copyOnScreen(backgroundCoverBuffer, canvas, context);
 
