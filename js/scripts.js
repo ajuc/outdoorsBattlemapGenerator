@@ -843,7 +843,7 @@ function collidesWithPrevious(lists, x, y, r) {
 	var collides;
 	//var polygon = createPolygonFromCircle(x, y, r*0.9);
 	var points = [new PointF(x, y)];//
-	const N = 4; //how many points on circle to check
+	const N = 11; //how many points on circle to check
 	
 	for (var angle = 0; angle<=Math.PI*2.0; angle += Math.PI*2.0/N) {
 		points.push(new PointF(x + r * Math.cos(angle), y + r * Math.sin(angle)));
@@ -1518,7 +1518,7 @@ function run() {
 			r0 = treePositions[i][2];
 			stepsNo = treePositions[i][3];
 			angleSteps = treePositions[i][4];
-			if (!collidesWithPrevious([listOfCirclesForRiver, listOfCirclesForClearings, listOfCirclesForTrees], x0, y0, r0*2.5)) {
+			if (!collidesWithPrevious([listOfCirclesForRiver, listOfCirclesForClearings, listOfCirclesForTrees], x0, y0, r0*4*treeSeparation)) {
 				if (rng() > leavedTreeProportion) {				
 					drawTreeRounded(
 						treesBufferContext, x0, y0, r0*2, centerRandomness, stepsNo, angleSteps,
