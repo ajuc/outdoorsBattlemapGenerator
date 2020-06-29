@@ -141,75 +141,6 @@ function load(name) {
 	document.getElementById(name).value = window.localStorage.getItem(name);
 }
 
-function getParameterNames() {
-	return [
-		"gridType",
-		"gridSize",
-		"gridOpacity",
-		"width",
-		"height",
-		"seed",
-		"treeDensity",
-		"stoneDensity",
-		"twigsDensity",
-		"riverSize",
-		"roadSize",
-		"centerRandomness",
-		"leavedTreeProportion",
-		"treeSize",
-		"treeColor",
-		"treeSeparation",
-		"serrationAmplitude",
-		"serrationFrequency",
-		"serrationRandomness",
-		"colorRandomness",
-		"clearings",
-		"clearingSize",
-		"treeSteps",
-		"backgroundNo",
-		"showColliders",
-		"grassLength",
-		"grassDensity",
-		"grassSpread",
-		"autoredraw"
-	];
-}
-
-function getParameterDefaultValue(name) {
-	const defaults = {
-		"gridType": 1,
-		"gridSize": 32,
-		"gridOpacity": 40,
-		"width": 1024,
-		"height": 1024,
-		"seed": 1,
-		"treeDensity": 40,
-		"stoneDensity": 40,
-		"twigsDensity": 40,
-		"riverSize": 3,
-		"roadSize": 0,
-		"centerRandomness": 20,
-		"leavedTreeProportion": 95,
-		"treeSize": 50,
-		"treeColor": 120,
-		"treeSeparation": 40,
-		"serrationAmplitude": 130,
-		"serrationFrequency": 30,
-		"serrationRandomness": 250,
-		"colorRandomness": 30,
-		"clearings": 9,
-		"clearingSize": 30,
-		"treeSteps": 2,
-		"backgroundNo": 1,
-		"showColliders": 0,
-		"grassLength": 85,
-		"grassDensity": 120,
-		"grassSpread": 45,
-		"autoredraw": true
-	};
-	return defaults[name];
-}
-
 function allRedraws() {
 	return {"background": true, "river": true, "clearings":true, "stones": true, "twigs": true, "backgroundCover": true, "grid":true, "trees": true};
 }
@@ -250,74 +181,55 @@ function mergeRedraws(oldRedraws, newRedraws) {
 	return r;
 }
 
-function getNeededRedrawsFor(name) {
-	const functions = {
-		"gridType": onlyOneRedraw("grid"),
-		"gridSize": onlyOneRedraw("grid"),
-		"gridOpacity": onlyOneRedraw("grid"),
-		"width": allRedraws,
-		"height": allRedraws,
-		"seed": allRedraws,
-		"treeDensity": onlyOneRedraw("trees"),
-		"stoneDensity": onlyOneRedraw("stones"),
-		"twigsDensity": onlyOneRedraw("twigs"),
-		"riverSize": onlyRedrawsAfter("river"),
-		"roadSize": onlyRedrawsAfter("river"),
-		"centerRandomness": onlyOneRedraw("trees"),
-		"leavedTreeProportion": onlyOneRedraw("trees"),
-		"treeSize": onlyOneRedraw("trees"),
-		"treeColor": onlyOneRedraw("trees"),
-		"treeSeparation": onlyOneRedraw("trees"),
-		"serrationAmplitude": onlyOneRedraw("trees"),
-		"serrationFrequency": onlyOneRedraw("trees"),
-		"serrationRandomness": onlyOneRedraw("trees"),
-		"colorRandomness": onlyOneRedraw("trees"),
-		"clearings": onlyRedrawsAfter("clearings"),
-		"clearingSize": onlyRedrawsAfter("clearings"),
-		"treeSteps": onlyOneRedraw("trees"),
-		"backgroundNo": onlyTheseRedraws(["background", "backgroundCover"]),
-		"showColliders": onlyOneRedraw("colliders"),
-		"grassLength": onlyTheseRedraws(["background", "backgroundCover"]),
-		"grassDensity": onlyTheseRedraws(["background", "backgroundCover"]),
-		"grassSpread": onlyTheseRedraws(["background", "backgroundCover"]),
-		"autoredraw": noneRedraws()
+function getFullParameters() {
+	const result = {
+		"gridType": { defaultValue: 1, randomFn: null, redraw: onlyOneRedraw("grid"), },
+		"gridSize": { defaultValue: 32, randomFn: null, redraw: onlyOneRedraw("grid"), },
+		"gridOpacity": { defaultValue: 40, randomFn: null, redraw: onlyOneRedraw("grid"), },
+		"width": { defaultValue: 1024, randomFn: null, redraw: allRedraws(), },
+		"height": { defaultValue: 1024, randomFn: null, redraw: allRedraws(), },
+		"seed": { defaultValue: 1, randomFn: () => Math.round(Math.random() * 65536), redraw: allRedraws(), },
+		"treeDensity": { defaultValue: 40, randomFn: () => Math.round(Math.random() * 100), redraw: onlyOneRedraw("trees"), },
+		"stoneDensity": { defaultValue: 40, randomFn: () => Math.round(Math.random() * 20 * Math.random() * 5), redraw: onlyOneRedraw("stones"), },
+		"twigsDensity": { defaultValue: 40, randomFn: () => Math.round(Math.random() * 20 * Math.random() * 5), redraw: onlyOneRedraw("twigs"), },
+		"riverSize": { defaultValue: 3, randomFn: () => Math.random() > 0.5 ? Math.round(Math.random() * 10) : 0, redraw: onlyRedrawsAfter("river"), },
+		"roadSize": { defaultValue: 0, randomFn: () => Math.random() > 0.5 ? Math.round(Math.random() * 10) : 0, redraw: onlyRedrawsAfter("river"), },
+		"centerRandomness": { defaultValue: 20, randomFn: () => Math.round(30), redraw: onlyOneRedraw("trees"), },
+		"leavedTreeProportion": { defaultValue: 95, randomFn: () => Math.round(Math.random() * 100), redraw: onlyOneRedraw("trees"), },
+		"treeSize": { defaultValue: 50, randomFn: () => Math.round(30) + Math.round(Math.random() * 40), redraw: onlyOneRedraw("trees"), },
+		"treeColor": { defaultValue: 120, randomFn: () => Math.round(Math.random() * 65536), redraw: onlyOneRedraw("trees"), },
+		"treeSeparation": { defaultValue: 40, randomFn: () => Math.round(80 + Math.random() * 20), redraw: onlyOneRedraw("trees"), },
+		"serrationAmplitude": { defaultValue: 130, randomFn: () => Math.round(80 + Math.random() * 40), redraw: onlyOneRedraw("trees"), },
+		"serrationFrequency": { defaultValue: 30, randomFn: () => Math.round(80 + Math.random() * 40), redraw: onlyOneRedraw("trees"), },
+		"serrationRandomness": { defaultValue: 250, randomFn: () => Math.round(100), redraw: onlyOneRedraw("trees"), },
+		"colorRandomness": { defaultValue: 30, randomFn: () => Math.round(20), redraw: onlyOneRedraw("trees"), },
+		"clearings": { defaultValue: 9, randomFn: () => Math.round(3 + Math.random() * 10), redraw: onlyRedrawsAfter("clearings"), },
+		"clearingSize": { defaultValue: 30, randomFn: () => Math.round(30 + Math.random() * 20), redraw: onlyRedrawsAfter("clearings"), },
+		"treeSteps": { defaultValue: 2, randomFn: () => Math.round(3 + Math.random() * 2), redraw: onlyOneRedraw("trees"), },
+		"backgroundNo": { defaultValue: 1, randomFn: null, redraw: onlyTheseRedraws(["background", "backgroundCover"]), },
+		"showColliders": { defaultValue: 0, randomFn: null, redraw: onlyOneRedraw("colliders"), },
+		"grassLength": { defaultValue: 85, randomFn: () => Math.round(25 + Math.random() * 50), redraw: onlyTheseRedraws(["background", "backgroundCover"]), },
+		"grassDensity": { defaultValue: 120, randomFn: () => Math.round(25 + Math.random() * 50), redraw: onlyTheseRedraws(["background", "backgroundCover"]), },
+		"grassSpread": { defaultValue: 45, randomFn: () => Math.round(5 + Math.random() * 25), redraw: onlyTheseRedraws(["background", "backgroundCover"]), },
+		"autoredraw": { defaultValue: true, randomFn: null, redraw: noneRedraws(), },
 	};
-	return functions[name];
+	return result;
+}
+
+function getParameterNames() {
+	return Object.keys(getFullParameters());;
+}
+
+function getParameterDefaultValue(name) {
+	return getFullParameters()[name].defaultValue;
 }
 
 function getParameterRandomizeFunction(name) {
-	const functions = {
-		"gridType": null,
-		"gridSize": null,
-		"gridOpacity": null,
-		"width": null,
-		"height": null,
-		"seed": function () { return Math.round(Math.random() * 65536); },
-		"treeDensity": function () { return Math.round(Math.random() * 100); },
-		"stoneDensity": function () { return Math.round(Math.random() * 20 * Math.random() * 5); },
-		"twigsDensity": function () { return Math.round(Math.random() * 20 * Math.random() * 5); },
-		"riverSize": function () { return Math.random() > 0.5 ? Math.round(Math.random() * 10) : 0; },
-		"roadSize": function () { return Math.random() > 0.5 ? Math.round(Math.random() * 10) : 0; },
-		"centerRandomness": function () { return Math.round(30); },
-		"leavedTreeProportion": function () { return Math.round(Math.random() * 100); },
-		"treeSize": function () { return Math.round(30) + Math.round(Math.random() * 40); },
-		"treeColor": function () { return Math.round(Math.random() * 65536); },
-		"treeSeparation": function () { return Math.round(80 + Math.random() * 20); },
-		"serrationAmplitude": function () { return Math.round(80 + Math.random() * 40); },
-		"serrationFrequency": function () { return Math.round(80 + Math.random() * 40); },
-		"serrationRandomness": function () { return Math.round(100); },
-		"colorRandomness": function () { return Math.round(20); },
-		"clearings": function () { return Math.round(3 + Math.random() * 10); },
-		"clearingSize": function () { return Math.round(30 + Math.random() * 20); },
-		"treeSteps": function () { return Math.round(3 + Math.random() * 2); },
-		"backgroundNo": null,
-		"showColliders": null,
-		"grassLength": function () { return Math.round(25 + Math.random() * 50); },
-		"grassDensity": function () { return Math.round(25 + Math.random() * 50); },
-		"grassSpread": function () { return Math.round(5 + Math.random() * 25); },
-		"autoredraw": null
-	};
-	return functions[name];
+	return getFullParameters()[name].randomFn;
+}
+
+function getNeededRedrawsFor(name) {
+	return getFullParameters()[name].redraw;
 }
 
 function saveParametersToLocalStorage() {
